@@ -1,0 +1,144 @@
+% ---------
+%  Compile with "pdflatex hw0".
+% --------
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[11pt]{article}
+\usepackage{jeffe, handout, graphicx, fancyvrb}
+\usepackage{tikz}				% Trees
+\usepackage{color}				% Coloring
+\usepackage{amsmath}			% Math multilining
+\usepackage[utf8]{inputenc}		% Allow some non-ASCII Unicode in source
+
+% =========================================================
+%   Define common stuff for solution headers
+% =========================================================
+\Class{CS 438}
+\Semester{Spring 2014}
+\Authors{1}
+\AuthorOne{Timur Reziapov}{reziapo1}
+% =========================================================
+\begin{document}
+
+% ---------------------------------------------------------
+\HomeworkHeader{1}
+\begin{enumerate}[1]
+\item % Question 1
+  \begin{enumerate}[(a)]
+    \item \textbf{Improving diagnostics:}
+    Consider improving packet diagnostics. A possible modification to the current architecture could be adding extra information to each packet's header to indicate problems or allow checks, e.g. path information, errors occuring between the five layers, etc. This extra information could be helpful in case problems occur and it will save time for those solving the issues. A disadvantage would be the extra overhead on packet headers, extra logic in arcitecture, and unnecesary information if there are no problems.
+
+    \item \textbf{DNS vs IP in packets:}
+    Some reasons we use IP addresses include: 1) we can assign hosts topology 2) IP addreses are shorter and take less space than DNS. Using DNS addresses instead of IP would make topological routing much more difficult if not impossible to enforce, and introduce more overhead in packets. Changing to DNS would provide the benefit of eliminating DNS lookups and making packet headers more human reeadable.
+
+    \item \textbf{Transport atop IP:}
+    The layers below and above IP layer only have implement a single interface to communicate, thus the numerous transport protocols and data link types only have to support IP, whereas without IP you would have to implement communication between each transport protocol and data link type. The IP layer also helps innovation as once again the new protocls and data link types only have to implement IP.
+
+    \item \textbf{Tor and end-to-end principle:}
+    The Tor network does violate the end-to-end principle because it uses its separate network of Tor nodes where each one performs encryption/decryption to send a message anonymously, not at the end hosts as required by the principle.
+  \end{enumerate}
+
+\item % Question 2
+  \begin{enumerate}[(a)]
+    \item \textbf{Packet or circuit?} 
+    A packet-switched network would be more appropriate because the application doesn't fully utilize the circuit all the time while other work could be done.
+
+    \item \textbf{Congestion control?} 
+    No, because in the worst case when all of the applications are sending packets at the same time, al the capacities in the network can handle all of the packets simultaneously.
+  \end{enumerate}
+
+\item % Question 3 
+  
+  \begin{enumerate}[(a)]
+
+    \item \textbf{Bandwidth-delay product:} \\
+      $Propagation\ delay = 20,000,000$m$ / (2.5 \times 10^8$m$/$s$) = 0.08$s \\
+      $BDP = Propagation\ delay\ \times bits/second = \ 0.08$s$ \times (2 \times 10^6$bps$) = 160,000$ bits
+    \item \textbf{Max number of bits in a link at any given time:}
+      160,000 bits
+    \item \textbf{Width of a bit in the link in meters:}
+      $20,000,000$m$/160000$bits$ = 0.00000625$m$ = 6.25\mu$m
+    \item \textbf{Equation for bit width:} 
+    \begin{equation}
+      \frac{m}{R \times \frac{m}{s}} = \frac{s}{R}
+    \end{equation}
+
+  \end{enumerate}
+
+\item % Question 4
+  \begin{enumerate}[]
+    \item \textbf{Total end-to-end delay for packet equation:}
+      \begin{equation}
+        \sum_{i=1}^{3} \left(\frac{L}{R_i} + \frac{d_i}{s_i}\right)
+      \end{equation}
+    \item \textbf{Example end-to-end delay:}
+    \begin{equation}
+      3\times\left(\frac{1500\times8}{2\times10^6}\right) + \left(2\times\frac{3}{10^3}\right) + \left(\frac{5,000,000 + 4,000,000 + 1,000,000}{2.5\times10^8}\right) =
+     0.064 \text{ seconds}
+    \end{equation}
+  \end{enumerate}
+
+\item % Question 5
+  \begin{enumerate}[(a)]
+    \item \textbf{Success on 1st attempt:} 
+      $1/10 = 0.1$
+    \item \textbf{Success on 2nd attempt:}  
+      $(9/10) \times (1/10) = 0.09$
+    \item \textbf{Success on $n$th attempt}
+      $(9/10)^{n-1} \times (1/10)$
+    \item \textbf{Failure on all 10 attempts:} 
+      $(9/10)^{10} = 0.3487$
+    \item \textbf{Expected number of attempts:} 
+      \begin{equation}
+        \sum_{i=1}^{\infty} i \times (9/10)^{i-1} \times (1/10)\ = 10 \text{ (attempts)}
+      \end{equation}
+      The expected number of attempts to connect is the weighted average of all possible numbers of attempts, where the weight is the corresponding probability.
+  \end{enumerate}
+
+\item % Question 6
+\begin{enumerate}[(a)]
+  \item \textbf{whois facebook.com}
+  \begin{enumerate}[i)]
+    \item Technical Contact Phone Number: +1.6505434800
+    \item Registrar: MARKMONITOR INC. \\
+      Name Server 1: A.NS.FACEBOOK.COM \\
+      Name Server 1 IP: 69.171.239.12 \\
+      Name Server 2: B.NS.FACEBOOK.COM \\
+      Name Server 2 IP: 69.171.255.12
+    \item Update Date: 28-sep-2012
+  \end{enumerate}
+  
+  \item \textbf{ping}
+    \begin{enumerate}[]
+      \item
+        \textbf{--- a.ns.facebook.com ping statistics ---} \\
+        round-trip min/avg/max = 43.596/54.651/69.695 ms \\
+      \item
+        \textbf{--- ns1.google.com ping statistics ---} \\
+        (Both google.com and youtube.com have ns1.google.com listed as the first nameserver) \\
+        round-trip min/avg/max = 28.714/46.844/68.296 ms \\
+    \end{enumerate}
+
+  \item \textbf{traceroute www.google.com}
+    \begin{enumerate}[i)]
+      \item \textbf{Internet Address of the 7th Router:} 
+      as15169-2-c.350ecermak.il.ibone.comcast.net (66.208.233.142)
+      \item \textbf{--- as15169-2-c.350ecermak.il.ibone.comcast.net ping statistics ---} \\
+        round-trip min/avg/max/stddev = 14.526/62.563/140.608/55.675 ms \\
+
+        \textbf{traceroute to as15169-2-c.350ecermak.il.ibone.comcast.net (66.208.233.142),\\ 64 hops max, 52 byte packets} \\
+         1)  10.0.0.1 (10.0.0.1)  3.506 ms  21.713 ms  1.160 ms \\
+         2)  98.212.144.1 (98.212.144.1)  10.711 ms  54.736 ms  10.071 ms \\
+         3)  te-0-7-0-7-sur01.champaign.il.chicago.comcast.net (162.151.32.181)  20.433 ms  10.776 ms   11.985 ms \\
+         4)  te-2-10-0-7-ar01.area4.il.chicago.comcast.net (68.87.232.173)  19.373 ms  23.003 ms
+            te-2-10-0-6-ar01.area4.il.chicago.comcast.net (68.85.177.225)  30.976 ms \\
+         5)  he-3-10-0-0-cr01.350ecermak.il.ibone.comcast.net (68.86.93.181)  31.695 ms  38.691 ms  15.214 ms \\
+         6)  he-0-10-0-0-pe04.350ecermak.il.ibone.comcast.net (68.86.83.50)  23.626 ms  13.612 ms  26.528 ms \\
+         7)  as15169-2-c.350ecermak.il.ibone.comcast.net (66.208.233.142)  20.445 ms  30.235 ms  68.097 ms \\
+
+         (Total) Round Trip Times for ping and traceroute differ. Traceroute has a larger RTT.
+    \end{enumerate}
+  \end{enumerate}
+\end{enumerate}
+\end{document}
