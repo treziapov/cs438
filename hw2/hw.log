@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  18 FEB 2014 22:02
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  19 FEB 2014 10:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1258,25 +1258,25 @@ LaTeX Font Info:    Font shape `T1/mdbch/m/n' will be
 [1
 
 {/usr/local/texlive/2012/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 106.
-
 [2]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 106.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 121.
+ [3]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 121.
  (./hw.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 106.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 106.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 121.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 121.
 Package rerunfilecheck Info: File `hw.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 106.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 121.
  ) 
 Here is how much of TeX's memory you used:
- 18552 strings out of 493488
- 318785 string characters out of 3141326
+ 18568 strings out of 493488
+ 318934 string characters out of 3141326
  420089 words of memory out of 3000000
  21375 multiletter control sequences out of 15000+200000
- 45901 words of font info for 142 fonts, out of 3000000 for 9000
+ 46609 words of font info for 151 fonts, out of 3000000 for 9000
  970 hyphenation exceptions out of 8191
- 56i,12n,55p,607b,543s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 56i,12n,55p,607b,544s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/local/texlive/2012/texmf-dist/fonts/enc/dvips/ly1/texnansi.enc}</usr/lo
 cal/texlive/2012/texmf-dist/fonts/type1/bitstrea/charter/bchb8a.pfb></usr/local
 /texlive/2012/texmf-dist/fonts/type1/bitstrea/charter/bchr8a.pfb></usr/local/te
@@ -1287,10 +1287,10 @@ e/2012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chr7v.pfb></usr/local/texlive
 /2012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chr7y.pfb></usr/local/texlive/
 2012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chr8t.pfb></usr/local/texlive/2
 012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chri7m.pfb>
-Output written on hw.pdf (2 pages, 63107 bytes).
+Output written on hw.pdf (3 pages, 65217 bytes).
 PDF statistics:
- 78 PDF objects out of 1000 (max. 8388607)
- 64 compressed objects within 1 object stream
- 20 named destinations out of 1000 (max. 500000)
+ 85 PDF objects out of 1000 (max. 8388607)
+ 70 compressed objects within 1 object stream
+ 24 named destinations out of 1000 (max. 500000)
  16397 words of extra memory for PDF output out of 17280 (max. 10000000)
 

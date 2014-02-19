@@ -102,5 +102,20 @@ Max\ Phone\ Line\ Length \ =&\ \frac{33.01}{2} = 16.505 \text{ (km)}
   \end{align*}
   \end{enumerate}
 \item % Question 7 (Extra)
+  \begin{enumerate}[(a)]
+    \item \textbf{Efficiency of the network:} \\
+    Efficiency is defined as the ration between the time the network is being utilized and the total time. There is only one station sending data in this network so:
+    \begin{align*}
+      Efficiency \ =\ \frac{THT}{RingLatency + THT}
+    \end{align*}
+    \item \textbf{Optimall setting for THT:} \\
+    Since there is only one station working, the longer the single active station gets to hold on to the token the more efficient this network is. In fact, most optimal setting would be to never release the token.
+    \item \textbf{Upper bound on Token Rotation Time, TRT:} \\
+    Maximum $TRT$ would occur when each station holds on to the token for the duration of it's $THT$. Therefore:
+    \begin{align*}
+      TRT\ \leq\ RingLatency + N \times THT
+    \end{align*}
+    
+  \end{enumerate}
 \end{enumerate}
 \end{document}

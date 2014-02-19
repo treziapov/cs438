@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1392782528 "hw.tex" "hw.pdf" "hw" 1392782529
+["pdflatex"] 1392828506 "hw.tex" "hw.pdf" "hw" 1392828506
   "/usr/local/texlive/2012/texmf-dist/tex/context/base/supp-pdf.mkii" 1337017135 71627 94eb9990bed73c364d7f53f960cc8c5b ""
   "/usr/local/texlive/2012/texmf-dist/tex/generic/ifxetex/ifxetex.sty" 1284331290 1458 43ab4710dc82f3edeabecd0d099626b2 ""
   "/usr/local/texlive/2012/texmf-dist/tex/generic/oberdiek/gettitlestring.sty" 1303254447 8237 52810bdb4db2270e717422560a104aea ""
@@ -135,9 +135,9 @@
   "/usr/local/texlive/2012/texmf-dist/tex/latex/url/url.sty" 1264379145 21932 e3a9cf32ee9b853b42be14c2f25b873c ""
   "/usr/local/texlive/2012/texmf-dist/tex/latex/xcolor/xcolor.sty" 1169481954 55224 a43bab84e0ac5e6efcaf9a98bde73a94 ""
   "handout.sty" 1391535467 6042 3f75bdba3ef8ba3a8ba4acf871de21ab ""
-  "hw.aux" 1392782529 576 535f218c00a29ef8eec1862a968a18ff ""
-  "hw.out" 1392782529 0 d41d8cd98f00b204e9800998ecf8427e ""
-  "hw.tex" 1392782528 5405 1ffb0177bdef7663fcfd0522a2ef9a20 ""
+  "hw.aux" 1392828506 576 535f218c00a29ef8eec1862a968a18ff ""
+  "hw.out" 1392828506 0 d41d8cd98f00b204e9800998ecf8427e ""
+  "hw.tex" 1392828505 6274 3792694130406bcde6ff7c9dd1ab659f ""
   "jeffe.sty" 1392755167 25618 21fa79e1394b89ce4922cef625a6ee1b ""
   (generated)
   "hw.aux"
