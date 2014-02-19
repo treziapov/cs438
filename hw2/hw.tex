@@ -1,0 +1,106 @@
+% ---------
+%  Compile with "pdflatex hw0".
+% --------
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[11pt]{article}
+\usepackage{jeffe, handout, graphicx, fancyvrb}
+\usepackage{tikz}				% Trees
+\usepackage{color}				% Coloring
+\usepackage{amsmath}			% Math multilining
+\usepackage[utf8]{inputenc}		% Allow some non-ASCII Unicode in source
+
+% =========================================================
+%   Define common stuff for solution headers
+% =========================================================
+\Class{CS 438}
+\Semester{Spring 2014}
+\Authors{1}
+\AuthorOne{Timur Reziapov}{reziapo1}
+% =========================================================
+\begin{document}
+
+% ---------------------------------------------------------
+\HomeworkHeader{1}
+\begin{enumerate}[1.]
+\item % Question 1
+  \begin{enumerate}[(a)]
+  \item \textbf{Tradeoffs between copper and optical:} 
+  Optical calbing is more expensive than copper, but allows to transfer data singnificantly faster (higher bandwidth), over longer distances, and is immune to Electromagnetic Interference and Radio Frequency Interference due to close proximitiy to other electronic devices. Fibre optical cable is also smaller in diameter and weighs less, which is desirable for cabling solutions. Because a lot of technology was built on copper before fibre optics, it may be easier to build copper infrastructures and it is also cheaper, as no additional and expensive electronics are usually necessary.
+
+  \item \textbf{(Extra-credit) Different protocols:}
+
+  \item \textbf{(Extra-credit) Delayed release and early release:}
+  \end{enumerate}
+
+\item % Question 2
+\begin{enumerate}[(a)]
+\item \textbf{Output Signal-to-Noise Ratio:} \\
+  Output power level $P_2$ is unknown
+  \begin{align*}
+  -20 \text{ (dB)}\ =&\ 10 \times \log_{10}\left(\frac{P_2}{0.5 \text{ (W)}}\right) \text{(Negative because it's a loss)}\\
+  \Rightarrow P_2\ =&\ 0.005 \text{ (W)}\\
+  SNR_{dB}\ =&\ 10 \log_{10}\frac{0.005 \text{ (W)}}{8\times10^{-6}\text{ (W)}} =  10\log_{10}625 = 27.9588\text{ (dB)}
+  \end{align*}
+\item \textbf{Capacity with a frequency range of 100-1000 Hz:}
+  \begin{align*}
+  (Bandwidth)\ B\ =&\ 1000 - 100 = 900 \text{ (Hz)} \\
+  \frac{S}{N}\ =&\ 625 \\ 
+  (Channel\ Capactiy)\ C\ =&\ B \times \log_{2}\left(1+\frac{S}{N}\right) \\
+  =&\ 900\text{ (Hz)} \times \log_2 626 \\
+  =&\ 8361.02\text{ (bps)} =  8.36102\text{ (kbps) }
+  \end{align*}
+\item \textbf{Length of phone line before requiring a repeater:} 
+\begin{align*}
+Attenuation\ Rate \ =&\ 2 \text{ (dB/km)} \\
+SNR \ =&\ 10\log_{10}\left(\frac{0.00025 \text{ (W)}}{0.5 \text{ (W)}}\right) \ =\ -33.01 \text{ (dB)} \\
+Max\ Phone\ Line\ Length \ =&\ \frac{33.01}{2} = 16.505 \text{ (km)}
+\end{align*}
+\end{enumerate}
+
+\item % Question 3
+4B/5B encoding and NRZI signals
+(See next page for NRZI signals)
+  \begin{enumerate}[(a)]
+  \item \textbf{1110 0101 0000 0011}  \\
+  4B/5B Encoding: 11100 01011 11110 10101
+  \item \textbf{1101 1110 1010 1101 1011 1110 1110 1111} \\
+  4B/5B Encoding: 11011 11100 10110 11011 10111 11100 11100 11101
+  \end{enumerate}
+
+\addtocounter{enumi}{2}
+\item % Question 6
+  \begin{enumerate}[(a)]
+  \item \textbf{Probability of a collision in the $i$th round, $q_i$: }
+  For a collision to happen in the $i$th round, both nodes must choose the same slot out of the $2^{i-1}$ slots for that round.
+  Each slot is equally likely, so the probability for $A$ and $B$ to pick any specific slot is $1/2^{i-1}$. Therefore:
+    \begin{align*}
+    q_i \ =&\ \sum_{n=0}^{2^{i-1}-1} \frac{1}{2^{i-1}} \times \frac{1}{2^{i-1}} \\
+    =&\ \frac{1}{2^{i-1}}
+    \end{align*}
+  \item \textbf{Probability $p_i$ that exactly $i$ rounds are needed for success:} To reach $i$th round, there must have been $i-1$ coflicts, one at every round before. In order to finish on the $i$th round, we must not have a conflict at the last round. Therefore:
+    \begin{align*}
+    p_i \ =&\ \left(\prod_{n=1}^{i-1}q_n\right)\times(1-q_i)\\ \\
+    p_1 \ =&\ 1 \\
+    p_2 \ =&\ 1 - \frac{1}{2}\ =\ \frac{1}{2} \\ 
+    p_3 \ =&\ \frac{1}{2} \times \left(1-\frac{1}{4}\right) \ =\ \frac{3}{8}\\
+    p_4 \ =&\ \frac{1}{2} \times \frac{1}{4} \times \left(1-\frac{1}{8}\right) \ =\ \frac{7}{64}\\
+    \end{align*}
+  \item \textbf{Probabiliy $A$ wins again =}
+    \begin{align*}
+    1 - 2\times\frac{1}{2}\times\frac{1}{4} \ =\ \frac{3}{4}
+    \end{align*}
+  \item \textbf{Probability that $A$ captures the network for the next 5 frames, given $A$ won the first round:}
+  At every round $A$ must pick a time slot with value strictly smaller than $B$'s. Assuming after $A$ wins round 1, its counter is 1 and $B$'s counter is 2:
+  \begin{align*}
+    P(win_2 | win_1) \ =&\ \frac{1}{2}\times\frac{3}{4} + \frac{1}{2}\times\frac{2}{4} \ =\ \frac{5}{8} \\
+    P(win_3 | win_2,\ win_1) \ =&\ \frac{1}{2}\times\frac{7}{8} + \frac{1}{2}\times\frac{6}{8} \ =\ \frac{13}{16} \\
+    P(win_4 | win_3,\ win_2,\ win_1) \ =&\ \frac{1}{2}\times\frac{15}{16} + \frac{1}{2}\times\frac{14}{16} \ =\ \frac{29}{32}\\
+    P(win_5 | win_4,\ win_3,\ win_2,\ win_1) \ =&\ \frac{1}{2}\times\frac{31}{32} + \frac{1}{2}\times\frac{30}{32} \ =\ \frac{61}{64}\\ \\
+    P(win_2 \land win_3 \land win_4 \land win_5\ |\ win_1)\ =&\ \frac{5}{8} \times \frac{13}{16} \times \frac{29}{32} \times \frac{61}{64} \ =\ 0.4386\\
+  \end{align*}
+  \end{enumerate}
+\item % Question 7 (Extra)
+\end{enumerate}
+\end{document}
