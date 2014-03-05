@@ -1,0 +1,192 @@
+% ---------
+%  Compile with "pdflatex hw0".
+% --------
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[11pt]{article}
+\usepackage{jeffe, handout, graphicx, fancyvrb}
+\usepackage{tikz}				% Trees
+\usepackage{color}				% Coloring
+\usepackage{amsmath}			% Math multilining
+\usepackage[utf8]{inputenc}		% Allow some non-ASCII Unicode in source
+
+% =========================================================
+%   Define common stuff for solution headers
+% =========================================================
+\Class{CS 438}
+\Semester{Spring 2014}
+\Authors{1}
+\AuthorOne{Timur Reziapov}{reziapo1}
+% =========================================================
+\begin{document}
+
+% ---------------------------------------------------------
+\HomeworkHeader{3}
+\begin{enumerate}[1.]
+
+\item % Problem 1
+  \begin{enumerate}[(a)]
+  
+  \item 
+  \textbf{
+    When a new router is brought up in link state, how does it get information about the network? How is it done for distance vector?
+  } 
+
+    With link state routing, the node will create its own graph of the network topology, allowing it to find the best routing path. It builds the graph by first getting Link State Packets, containing information on direct neighbors, from its direct neighbors, choosing the closest neighbor and keeps looking at newly added neighbors LSPs to find the least-cost paths to all other nodes in the topology. The other nodes provide their LSPs to all other nodes through flooding.
+
+    For distance vector, nodes only store a table of the nodes they can reach and the cost to reach them. Each node reports its vector to its direct neighbors, and upon receipt other nodes update their distance vectors with the least-cost hops.
+
+  \item 
+  \textbf{
+    Can link-state experience count-to-infinity problems? Why or why not? 
+  } 
+    No, because the problem only arises in distance vector approach, where nodes cannot tell whether they are a part of the path suggested by the received distance vectors and so keep counting back and forth. With link state routing, LSP only involve paths among identifiable direct neighbors.
+
+  \item 
+  \textbf{
+    Link-state routing is comparable to watching a map (e.g. your GPS) when you drive. Another way to navigate your car is to look for "landmarks" – big structures like buildings, which helps you know where you are. Describe how you would develop a routing protocol (as an alternative to link-state and distance-vector) that used a similar concept to landmarks to route. 
+  } 
+
+    First introduce levels of landmarks (similar to size of physical landmarks) and then choose some routers for each level, with all routers having some level. Each landmark should have an area it covers, say a radius to cover a circular area, and assign some smallest radius to the bottom level and maximum needed radius to the top level. All other non-landmark nodes that fall within the radius of some landmark will store it in its routing table, and every landmark router should know some higher level (bigger) landmark router.
+
+  \item 
+  \textbf{
+    Consider an alternate Internet where we are only allowed to use one address per host (the MAC address), and we need to get rid of IP addresses. What implications would this have for the Internet? Describe how you would redesign the Internet to do this, and challenges that arise. 
+  } 
+    Using MAC addresses instead of IP addresses, would mean each device would have a unique id that wouldn't change nearly as often as a dynamically alocated IP address. MAC addresses do not contain any hierarchical or toplogical information, which would be the biggest challenge to make them practical in replacing IP addresses. To redesign the Internet with MAC addressing, we would want fast routing similar to how it's done with IP addressing but that would be very complex if not impossible. A naive approach would be to have routers know which MAC address they can reach and propagate that information to other routers. The problem with this approach is it's extremely poor scaling, requiring linear storage size.
+  \end{enumerate}
+  \newpage
+
+  \item % Problem 2
+    \textbf{
+      Consider an error-free 512-kbps satellite channel used to send 1024-byte data frames in one direction,with very short acknowledgements coming back the other way. Assume an earth-satellite propagation delay of 270 msec. 
+    }
+    \begin{enumerate}[a.] 
+    \item What is the maximum throughput for window size of 1 and 7?
+      \begin{align*}
+        1024\text{ B}\ =&\ 8192\text{ bits} \\
+        8192\text{ bits} / 512000\text{bps}\ =&\ 16\text{ ms} \\
+        \text{Round trip time + propagation}\ =&\ 16 + 270 \times 2 = 556\text{ ms} \\ \\
+        \text{Window size - 1: }& 8192\text{ bits} / 556\text{ ms}\ =\ 14.73\text{ kbps} \\
+        \text{Window size - 7: }& 7 \times 8192\text{ bits} / 556\text{ ms}\ =\ 103.14\text{ kbps} \\
+      \end{align*}
+    \item At what minimum window size can the protocol run at the full rate of the channel? \\
+      We need $556/16 \ =\ 34.75 \approx 35$ frames at minimum to run at the full rate of the channel.  
+    \end{enumerate}
+
+  \item % Problem 3
+  \textbf{
+    IP Addressing. 
+  } 
+
+  Routing table: \\
+  64.20.44.0/24 if1 \\
+  64.20.44.100/30 if2 \\
+  64.20.32.0/20 if3 \\
+  64.20.46.0/23 if4 \\
+  64.0.0.0/10 if5 \\
+  0.0.0.0/0 if6 
+
+    \begin{enumerate}[a.]
+      \item \textbf{
+        For each entry in the table, list the range of IP addresses that will be matched by that entry (ignoring any overlap between entries) and state the number of addresses in each group. Exclude the IP addresses for the network address and the broadcast address in these calculations. 
+      } \\
+
+      \begin{tabular}{|c|c|c|c|c|}
+      \hline
+      Destination & CIDR & Address Range & Number of Addresses \\
+      \hline
+      64.20.44.0    & 24 & 64.20.44.1-64.20.44.254    & $2^8-2-2 = 252$ \\
+      64.20.44.100  & 30 & 64.20.44.101-64.20.44.102  & $2$ \\
+      64.20.32.0    & 20 & 64.20.32.1-64.20.47.254    & $2^{12} - 2 - 510 = 3580$ \\
+      64.20.46.0    & 23 & 64.20.46.1-64.20.47.254    & $2^9 - 2 = 510$\\
+      64.0.0.0      & 10 & 64.0.0.1-64.63.255.254     & $2^{22}-2-252-2-3582-510=4189956$ \\
+      0.0.0.0       & 0  & All other addresses   & - \\
+      \hline
+      \end{tabular}
+      \item \textbf{
+        Which interface will be used for each of the following addresses? Remember that routers use the rule with the longest matching prefix. 
+      }
+        \begin{enumerate}[i.]
+          \item \textbf{64.20.44.102:} if2 
+          \item \textbf{64.20.45.102:} if3
+          \item \textbf{64.20.47.102:} if4
+          \item \textbf{64.20.48.102:} if5
+        \end{enumerate}
+    \end{enumerate}
+    \newpage
+
+  \item % Problem 4
+  \textbf{
+    Link-state routing
+  } 
+
+    \begin{tabular}{|c|l|l|}
+    \hline
+    Step & Confirmed & Tentative \\
+    \hline
+    1 & (A,0,-) & - \\
+    2 & (A,0,-) & 
+      (B,1,B) (F,8,F) \\
+    3 & (A,0,-) (B,1,B) & 
+      (F,8,F) \\
+    4 & (A,0,-) (B,1,B) &
+      (F,8,F) (C,3,B) \\
+    5 & (A,0,-) (B,1,B) (C,3,B) & (F,8,F) \\
+    6 & (A,0,-) (B,1,B) (C,3,B) & (F,7,C) (D,4,C) (G,5,C) \\
+    7 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) & (F,7,C) (G,5,C) \\
+    8 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) & (F,7,C) (G,5,C) (E,6,D) \\
+    9 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) & (F,7,C) (E,6,D) \\ 
+    10 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) & (F,7,C) (E,6,D) (H,8,G) \\
+    11 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) (E,6,D) & (F,7,C) (H,8,G) \\
+    12 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) (E,6,D) & (F,7,C) (H,7,E) \\
+    13 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) (E,6,D) (F,7,C) & (H,7,E) \\
+    14 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) (E,6,D) (F,7,C) & (H,7,E) \\
+    15 & (A,0,-) (B,1,B) (C,3,B) (D,4,C) (G,5,C) (E,6,D) (F,7,C) (H,7,E) & - \\
+    \hline
+    \end{tabular}
+
+  \item % Problem 5
+  \textbf{
+    Distance-vector routing
+  }
+  \begin{enumerate}[a.]
+  \item \textbf{Node A discovers neighbors B and F. What is A’s routing table? }
+
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+      \hline
+      Node &      A & B & C & D & E & F & G & H \\
+      \hline
+      Distance &  0 & 1 & $\infty$ & $\infty$ & $\infty$ & 8 & $\infty$ & $\infty$ \\
+      \hline
+      Next Hop &  - & B & - & - & - & F & - & - \\
+      \hline
+    \end{tabular}
+
+  \item \textbf{Node A receives the routing vector (1,0,2,3,11,8,9,10) from B. What is A's new routing table?}
+
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+      \hline
+      Node &      A & B & C & D & E & F & G & H \\
+      \hline
+      Distance &  0 & 1 & 3 & 4 & 12 & 8 & 10 & 11 \\
+      \hline
+      Next Hop &  - & B & B & B & B & F & B & B \\
+      \hline
+    \end{tabular}
+
+  \item \textbf{ Node A subsequently receives the routing vector (7,5,3,4,6,0,1,4) from F. Again, what is A's new routing table? }
+
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+      \hline
+      Node &      A & B & C & D & E & F & G & H \\
+      \hline
+      Distance &  0 & 1 & 3 & 4 & 12 & 8 & 9 & 11 \\
+      \hline
+      Next Hop &  - & B & B & B & B & F & F & B \\
+      \hline
+    \end{tabular}
+  \end{enumerate}
+\end{enumerate}
+\end{document}
