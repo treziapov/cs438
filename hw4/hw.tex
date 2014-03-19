@@ -1,0 +1,168 @@
+% ---------
+%  Compile with "pdflatex hw0".
+% --------
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[11pt]{article}
+\usepackage{jeffe, handout, graphicx, fancyvrb}
+\usepackage{tikz}				% Trees
+\usepackage{color}				% Coloring
+\usepackage{amsmath}			% Math multilining
+\usepackage[utf8]{inputenc}		% Allow some non-ASCII Unicode in source
+
+% =========================================================
+%   Define common stuff for solution headers
+% =========================================================
+\Class{CS 438}
+\Semester{Spring 2014}
+\Authors{1}
+\AuthorOne{Timur Reziapov}{reziapo1}
+% =========================================================
+\begin{document}
+
+% ---------------------------------------------------------
+\HomeworkHeader{4}
+\begin{enumerate}[1.]
+
+\item % Problem 1
+  \begin{enumerate}[(a)]  
+  \item 
+  \textbf{
+    You are the lead network operator of an ISP. At 8am you suddenly get phone calls from a large number of customers experiencing high rates of packet loss. 
+    How would you figure out what is happening? 
+  } 
+
+  It is likely the issue is congestion, which you could verify by asking customers to ping or traceroute the sites for which they're experiencing high loss, and see if there are common nodes or paths where packets are dropped or take exceptionally long to get transmitted. As another possibility, instead of congestion, problematic nodes could be casuing bit errors could be another possibility, due to corruption, or hardware/software faults. If this is the case, again, pinging and tracerouting would point to specific nodes for different clients.
+
+  \item 
+  \textbf{
+    You are still the lead network operator at an ISP. Business is booming. You are running a large OSPF network and need to provision two more routers to handle capacity. However you want to install them without taking down the rest of your production network. What needs to be done to bring these routers online? How do they end up acquiring information about the topology? 
+  } 
+
+  The new routers each need a unique Router ID which is a 32-bit number, usually chosen as the highest IP address on a router, but can be configured. The new routers also need to be able to connect to some routers already in the OSPF network, which will become their neighbors. 
+
+  Once the new routers come up, they will start sending "hello" packets to discover their neighbors and elect a designated router. The "hello" packets contain information on known neighbors (for acknowledgement) and link-state information for link-state routing. The designated router (DR or its backup BDR) generate Link-State Advertisements and perform database exchanges with other routers for™ Link-State Routing. Instead of forming adjacencies with all the routers, the non-designated routers only need to form adjacency with the DR. To ensure that all routers have the same information, the database is centralized at the DR and databases on all other routers are kept synchronized.
+  \end{enumerate}
+
+\item % Problem 2 
+\textbf{
+  CIDR: 
+}
+
+  \begin{tabular}{|c|c|c|}
+  \hline
+  Net/Mask & Next Hop & Address Range \\
+  \hline
+  C4.5E.2.0/23 & A & C4.5E.2.1 - C4.5E.3.FE \\
+  C4.5E.4.0/22 & B & C4.5E.4.1 - C4.5E.7.FE \\
+  C4.5E.C0.0/19 & C & C4.5E.C0.1 - C4.5E.DF.FE \\
+  C4.5E.40.0/18 & D & C4.5E.40.1 - C4.5E.7F.FE \\
+  C4.4C.0.0/14 & E & C4.4C.0.1 - C4.4F.FF.FE \\
+  C0.0.0.0/2 & F & C0.0.0.1 - FF.FF.FF.FE \\
+  80.0.0.0/1 & G & 80.0.0.1 - FF.FF.FF.FE \\
+  \hline
+  \end{tabular}
+  \begin{enumerate}[(a)]
+  \item \textbf{
+    C4.4B.31.2E:
+  } F
+  \item \textbf{
+    C4.5E.05.09:
+  } B
+  \item \textbf{
+    C4.4D.31.2E:
+  } E
+  \item \textbf{
+    C4.5E.03.87:
+  } A
+  \item \textbf{
+    C4.5E.7F.12:
+  } D
+  \item \textbf{
+    C4.5E.D1.02:
+  } C
+  \end{enumerate}
+\item % Problem 3
+
+  \begin{enumerate}[(a)]
+  \item
+  \textbf{
+    Least-cost paths:
+  }
+
+  \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|}
+    \hline
+    step & N'& D,p(b) & D,p(c) & D,p(d) & D,p(e) & D,p(f) & D,p(g) & D,p(h) & D,p(i) & D,p(j) \\
+    \hline
+    0 & a & 2,a & 3,a & $\infty$ & $\infty$ & \textbf{1,a} & $\infty$ & $\infty$ & 2,a & $\infty$ \\
+    1 & af & \textbf{2,a} & 3,a & $\infty$ & 7,f &  & 5,f & $\infty$ & 2,a & $\infty$ \\
+    2 & afb &  & 3,a & 9,b & 6,b &  & 5,f & $\infty$ & \textbf{2,a} & $\infty$ \\
+    3 & afbi &  & \textbf{3,a} & 9,b & 6,b &  & 5,f & 11,i &  & 6,i \\
+    4 & afbic &  &  & 8,c & 6,b &  & \textbf{5,f} & 11,i &  & 6,i \\
+    5 & afbicg &  &  & 8,c & \textbf{6,b} &  &  & 7,g &  & 6,i \\
+    6 & afbicge &  &  & 8,c & &  &  & 7,g &  & \textbf{6,i} \\
+    7 & afbicgej &  &  & 8,c & &  &  & \textbf{7,g} &  & \\
+    8 & afbicgejh &  &  & \textbf{8,c} & &  &  & &  & \\
+    9 & afbicgejhd &  &  & & &  &  & &  & \\
+    \hline
+  \end{tabular}
+
+  \item
+  \textbf{
+     BGP, routing table for AS 23:
+  }
+  
+  \begin{tabular}{|l|l|c|}
+    \hline
+    Network & Interface & Comment \\
+    \hline
+    1.3.8.0/23 & if1 & \\
+    1.4.4.0/23 & if1 & Aggregated prefix \\
+    1.7.128.0/17 & if1 & \\
+    2.7.9.0/24 & if2 & \\
+    7.5.8.0/22 & if4 & h against j, hot potato routing \\
+    1.2.3.0/24 & if4 & shorter AS path - 45 99 through j\\
+    \hline
+  \end{tabular} \\
+  Note: Ignored paths that contained AS 23 itself (loops).
+  \end{enumerate}
+
+\item % Problem 4
+  \begin{enumerate}[(a)]
+  \item
+  \textbf{
+    Application-level broadcast, total cost:
+  }
+  \begin{align*}
+    2 + 3 + 8 + 6 + 1 + 5 + 7 + 2 + 6 = 40
+  \end{align*}
+
+  \item
+  \textbf{
+    Reverse-Path Forwarding, packet copies: 
+  } 
+  A router will receive one packet from its upstream router on the least cost path tree, and another packet on every other edge that is not part of the shortest path tree. The number of packet copies for each node is:
+  \begin{align*}
+    a:0, b:2, c:1, d:2, e:2, f:3, g:1, h:3, i:3, j:2
+  \end{align*}
+
+  \item
+  \textbf{
+    RPF, total broadcast cost:
+  } Adding cost of the links used to send the packets:
+  \begin{align*}
+    0 + (2+7) + (3) + (5+7) + (4+6) + (1+6+4) + (4) + (2+9+3) + (2+4+9) + (4+3) = 85
+  \end{align*}
+
+  \item
+  \textbf{
+    Least-cost path tree at $a$, total broadcst cost:
+  } Adding cost of the links used to send the packets:
+  \begin{align*}
+    2 + 3 + 5 + 4 + 1 + 4 + 2 + 2 + 4 = 27
+  \end{align*}
+
+  \end{enumerate}
+\end{enumerate}
+\end{document}
