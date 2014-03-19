@@ -31,15 +31,13 @@
   \textbf{
     You are the lead network operator of an ISP. At 8am you suddenly get phone calls from a large number of customers experiencing high rates of packet loss. 
     How would you figure out what is happening? 
-  } 
-
+  }   
   It is likely the issue is congestion, which you could verify by asking customers to ping or traceroute the sites for which they're experiencing high loss, and see if there are common nodes or paths where packets are dropped or take exceptionally long to get transmitted. As another possibility, instead of congestion, problematic nodes could be casuing bit errors could be another possibility, due to corruption, or hardware/software faults. If this is the case, again, pinging and tracerouting would point to specific nodes for different clients.
 
   \item 
   \textbf{
     You are still the lead network operator at an ISP. Business is booming. You are running a large OSPF network and need to provision two more routers to handle capacity. However you want to install them without taking down the rest of your production network. What needs to be done to bring these routers online? How do they end up acquiring information about the topology? 
   } 
-
   The new routers each need a unique Router ID which is a 32-bit number, usually chosen as the highest IP address on a router, but can be configured. The new routers also need to be able to connect to some routers already in the OSPF network, which will become their neighbors. 
 
   Once the new routers come up, they will start sending "hello" packets to discover their neighbors and elect a designated router. The "hello" packets contain information on known neighbors (for acknowledgement) and link-state information for link-state routing. The designated router (DR or its backup BDR) generate Link-State Advertisements and perform database exchanges with other routers for™ Link-State Routing. Instead of forming adjacencies with all the routers, the non-designated routers only need to form adjacency with the DR. To ensure that all routers have the same information, the database is centralized at the DR and databases on all other routers are kept synchronized.

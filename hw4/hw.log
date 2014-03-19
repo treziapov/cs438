@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  19 MAR 2014 01:52
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  19 MAR 2014 10:37
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1211,72 +1211,74 @@ LaTeX Font Info:    Font shape `T1/mdbch/bx/n' in size <10.95> not available
 LaTeX Font Info:    Font shape `T1/mdbch/b/n' will be
 (Font)              scaled to size 10.51207pt on input line 34.
 LaTeX Font Info:    Font shape `OT1/mdbch/m/n' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `OT1/mdbch/m/n' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
 LaTeX Font Info:    Font shape `OML/mdbch/m/it' will be
-(Font)              scaled to size 10.51207pt on input line 53.
+(Font)              scaled to size 10.51207pt on input line 43.
 LaTeX Font Info:    Font shape `OML/mdbch/m/it' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `OML/mdbch/m/it' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
 LaTeX Font Info:    Font shape `OMS/mdbch/m/n' will be
-(Font)              scaled to size 10.51207pt on input line 53.
+(Font)              scaled to size 10.51207pt on input line 43.
 LaTeX Font Info:    Font shape `OMS/mdbch/m/n' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `OMS/mdbch/m/n' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
 LaTeX Font Info:    Font shape `OMX/mdbch/m/n' will be
-(Font)              scaled to size 10.51207pt on input line 53.
+(Font)              scaled to size 10.51207pt on input line 43.
 LaTeX Font Info:    Font shape `OMX/mdbch/m/n' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `OMX/mdbch/m/n' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
 LaTeX Font Info:    Font shape `OML/mdbch/m/n' will be
-(Font)              scaled to size 10.51207pt on input line 53.
+(Font)              scaled to size 10.51207pt on input line 43.
 LaTeX Font Info:    Font shape `OML/mdbch/m/n' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `OML/mdbch/m/n' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
 LaTeX Font Info:    Font shape `MDA/mdbch/m/n' will be
-(Font)              scaled to size 10.51207pt on input line 53.
+(Font)              scaled to size 10.51207pt on input line 43.
 LaTeX Font Info:    Font shape `MDA/mdbch/m/n' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `MDA/mdbch/m/n' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
 LaTeX Font Info:    Font shape `MDB/mdbch/m/n' will be
-(Font)              scaled to size 10.51207pt on input line 53.
+(Font)              scaled to size 10.51207pt on input line 43.
 LaTeX Font Info:    Font shape `MDB/mdbch/m/n' will be
-(Font)              scaled to size 7.68005pt on input line 53.
+(Font)              scaled to size 7.68005pt on input line 43.
 LaTeX Font Info:    Font shape `MDB/mdbch/m/n' will be
-(Font)              scaled to size 5.76004pt on input line 53.
+(Font)              scaled to size 5.76004pt on input line 43.
+LaTeX Font Info:    Font shape `T1/mdbch/m/n' will be
+(Font)              scaled to size 7.68005pt on input line 43.
 
-Overfull \hbox (27.11484pt too wide) in paragraph at lines 94--110
+Overfull \hbox (27.11484pt too wide) in paragraph at lines 92--108
 [][] 
  []
 
 [1
 
 {/usr/local/texlive/2012/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 168.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 166.
 
 [2]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 168.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 166.
  (./hw.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 168.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 168.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 166.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 166.
 Package rerunfilecheck Info: File `hw.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 168.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 166.
  ) 
 Here is how much of TeX's memory you used:
- 18552 strings out of 493488
- 318782 string characters out of 3141326
- 420088 words of memory out of 3000000
- 21371 multiletter control sequences out of 15000+200000
- 39081 words of font info for 139 fonts, out of 3000000 for 9000
+ 18559 strings out of 493488
+ 318869 string characters out of 3141326
+ 421089 words of memory out of 3000000
+ 21374 multiletter control sequences out of 15000+200000
+ 41856 words of font info for 144 fonts, out of 3000000 for 9000
  970 hyphenation exceptions out of 8191
- 56i,9n,55p,707b,541s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 56i,9n,55p,751b,541s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/local/texlive/2012/texmf-dist/fonts/enc/dvips/ly1/texnansi.enc}</usr/lo
 cal/texlive/2012/texmf-dist/fonts/type1/bitstrea/charter/bchb8a.pfb></usr/local
 /texlive/2012/texmf-dist/fonts/type1/bitstrea/charter/bchr8a.pfb></usr/local/te
@@ -1284,10 +1286,10 @@ xlive/2012/texmf-dist/fonts/type1/bitstrea/charter/bchri8a.pfb></usr/local/texl
 ive/2012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chr7t.pfb></usr/local/texli
 ve/2012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chr7y.pfb></usr/local/texliv
 e/2012/texmf-dist/fonts/type1/mathdesign/mdbch/md-chr8t.pfb>
-Output written on hw.pdf (2 pages, 54282 bytes).
+Output written on hw.pdf (2 pages, 54692 bytes).
 PDF statistics:
  67 PDF objects out of 1000 (max. 8388607)
  56 compressed objects within 1 object stream
  21 named destinations out of 1000 (max. 500000)
- 15373 words of extra memory for PDF output out of 17280 (max. 10000000)
+ 15885 words of extra memory for PDF output out of 17280 (max. 10000000)
 
