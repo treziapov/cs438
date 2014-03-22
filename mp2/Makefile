@@ -1,7 +1,7 @@
 CC = g++
 LINKER = g++
 WARNINGS = -Wchar-subscripts -Wimplicit -Wparentheses -Wreturn-type -Wmissing-braces -Wundef -Wshadow
-CC_OPTS = -Wall -Wextra $(WARNINGS)
+CC_OPTS = -Wall -Wextra -pthread $(WARNINGS)
 
 EXECS = manager distvec
 OBJS = manager.o distvec.o topology.o utility.o

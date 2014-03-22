@@ -4,6 +4,9 @@
 #include <fstream>
 #include <list>
 #include <sstream>
+#include <map>
+
+#define DEBUG true
 
 using namespace std;
 
@@ -49,10 +52,15 @@ class Topology
 
 		Topology();
 		~Topology();
+
 		void parse_topology_file(string file);
 		list<Link> get_node_links(int id);
 		void update_node_net_info(int id, string host, string port);
 
+		static string create_add_link_message(Link* link);
+		static string create_remove_link_message(int id);
+		static bool process_link_message(int id, string message, map<int, Link>* node_links);
 		static string serialize_node_links(list<Link> links);
 		static list<Link> deserialize_node_links(int id, string links_string);
+
 };

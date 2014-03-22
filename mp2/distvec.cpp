@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <map>
+#include <pthread.h>
 #include "topology.h"
 #include "utility.h"
+#include <cstdio>
+#include <ctime>
+
 
 #define START_PORT 20000
 #define SERVER_PORT "6000"
 #define BUFFER_SIZE 255
+#define DEBUG true
 
 using namespace std;
 
@@ -23,18 +28,44 @@ class DistanceVectorLink : public Link
 };
 
 /*
+ *	Globals
+ */
+int virtual_id;
+int manager_socket;
+int node_socket;
+map<int, DistanceVectorLink> neighbor_links;
+map<int, DistanceVectorLink> vector_map;
+char buffer[BUFFER_SIZE];
+bool neighbor_change = true;
+
+struct addrinfo hints;
+struct timeval waitd = {5, 0}; 
+
+pthread_mutex_t neighbor_links_mutex;
+pthread_mutex_t vector_map_mutex;
+pthread_mutex_t neighbor_change_lock;
+
+/*
  * Converts the given vector for a given node into a message string
  */
-string serialize_vector(int id, map<int, DistanceVectorLink>* neighbor_links)
+string serialize_vector(int id, map<int, DistanceVectorLink>* links)
 {
 	stringstream ss;
 	ss << "node-" << id << ";";
 
-	for (map<int, DistanceVectorLink>::iterator it = neighbor_links->begin(); it != neighbor_links->end(); it++)
+	for (map<int, DistanceVectorLink>::iterator it = links->begin(); it != links->end(); it++)
 	{
+		if (it->second.cost == -1)
+		{
+			continue;
+		}
+
 		ss << it->second.target_id << "-" << it->second.cost << ";";
 	}
 
+	#ifdef DEBUG
+		cout << "serialize_vector: " << ss.str() << endl;
+	#endif
 	return ss.str();
 }
 
@@ -63,13 +94,18 @@ list<DistanceVectorLink> deserialize_vector(int id, string vector_string)
 	}
 	
 	free(str);
+
+	#ifdef DEBUG
+		cout << "deserialize_vector: string - " << vector_string;
+		cout << ", result list size - " << links.size() << endl;
+	#endif
 	return links;
 }
 
 /*
  *
  */
-void update_neighbors(map<int, DistanceVectorLink>* neighbor_links, list<Link> links)
+void update_neighbors(map<int, DistanceVectorLink>* link_map, list<Link> links)
 {
 	DistanceVectorLink dv_link;
 	for (list<Link>::iterator it = links.begin(); it != links.end(); it++)
@@ -80,25 +116,33 @@ void update_neighbors(map<int, DistanceVectorLink>* neighbor_links, list<Link> l
 		dv_link.ip = it->ip;
 		dv_link.port = it->port;
 		dv_link.next_hop = it->target_id;
-		(*neighbor_links)[it->target_id] = dv_link;
+		(*link_map)[it->target_id] = dv_link;
 	}
+
+	#ifdef DEBUG
+		cout << "updated_neighbors" << endl;
+	#endif
 }
 
 /*
  *
  */
-void initialize_distance_vector(map<int, DistanceVectorLink>* vector_map, map<int, DistanceVectorLink>* neighbor_links)
+void initialize_distance_vector(map<int, DistanceVectorLink>* link_map, map<int, DistanceVectorLink>* neighbor_map)
 {
-	for (map<int, DistanceVectorLink>::iterator it = neighbor_links->begin(); it != neighbor_links->end(); it++)
+	for (map<int, DistanceVectorLink>::iterator it = neighbor_map->begin(); it != neighbor_map->end(); it++)
 	{
-		(*vector_map)[it->first] = it->second;
+		(*link_map)[it->first] = it->second;
 	}
+
+	#ifdef DEBUG
+		cout << "initialize_distance_vector" << endl;
+	#endif
 }
 
 /*
  * Updates the distance vector given neighbor's vector 
  */
-bool update_distance_vector(int id, map<int, DistanceVectorLink>* vector_map, list<DistanceVectorLink> neighbor_vector)
+bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list<DistanceVectorLink> neighbor_vector)
 {
 	bool updated = false;
 	DistanceVectorLink* link_to_neighbor;
@@ -106,11 +150,11 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* vector_map, li
 
 	for (list<DistanceVectorLink>::iterator it = neighbor_vector.begin(); it != neighbor_vector.end(); it++)
 	{
-		link_to_neighbor = &(*vector_map)[it->source_id];
+		link_to_neighbor = &(*link_map)[it->source_id];
 		current_cost = it->cost + link_to_neighbor->cost;
 
 		// If the target wasn't reachable from this node before, add it
-		if (vector_map->count(it->target_id) == 0)
+		if (link_map->count(it->target_id) <= 0 || (*link_map)[it->target_id].cost == -1)
 		{
 			DistanceVectorLink new_link;
 			new_link.source_id = id;
@@ -118,33 +162,202 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* vector_map, li
 			new_link.cost = current_cost;
 			new_link.next_hop = it->source_id;
 
-			(*vector_map)[it->target_id] = new_link;
+			(*link_map)[it->target_id] = new_link;
 			updated = true;
 		}
 		// If there is a shorter path to some node through this neighbor, update
-		else if (current_cost < (*vector_map)[it->target_id].cost)
+		else if (current_cost < (*link_map)[it->target_id].cost)
 		{
-			DistanceVectorLink* link = &(*vector_map)[it->target_id];
+			DistanceVectorLink* link = &(*link_map)[it->target_id];
 			link->cost = current_cost;
 			link->next_hop = it->source_id;
 			updated = true;
 		}
 	}
 
+	#ifdef DEBUG
+		cout << "update_distance_vector: update - " << (updated ? "yes" : "no") << endl;
+	#endif
 	return updated;
+}
+
+/*
+ * 	Print the current distance vector for the given map
+ */
+void print_distance_vector(map<int, DistanceVectorLink>* link_map)
+{
+	#ifdef DEBUG
+		cout << "print_distance_vector" << endl;
+	#endif
+
+	for (map<int, DistanceVectorLink>::iterator it = link_map->begin(); it != link_map->end(); it++)
+	{
+		cout << it->first << " "; 
+		cout << it->second.next_hop << " ";
+		cout << it->second.cost << endl;
+	}	
 }
 
 /*
  *
  */
-void print_distance_vector(map<int, DistanceVectorLink>* vector_map)
+void* manager_thread_handle(void* data)
 {
-	for (map<int, DistanceVectorLink>::iterator it = vector_map->begin(); it != vector_map->end(); it++)
+	fd_set read_manager_flags;
+
+	while (true)
 	{
-		cout << it->first << " " 
-			<< it->second.next_hop << " " 
-			<< it->second.cost << endl;
-	}	
+
+		FD_ZERO(&read_manager_flags);
+        FD_SET(manager_socket, &read_manager_flags);
+
+        int sel = select(manager_socket + 1, &read_manager_flags, (fd_set*)0, (fd_set*)0, &waitd);
+
+        // If an error with select
+        if (sel < 0)
+        {
+        	perror("select error");
+           	continue;
+        }
+
+        // Socket ready for reading
+        if (FD_ISSET(manager_socket, &read_manager_flags)) 
+        {
+            // Clear set
+            FD_CLR(manager_socket, &read_manager_flags);
+            
+			// Get information about node vector
+			Utility::receive(manager_socket, buffer, BUFFER_SIZE, NULL, NULL);
+
+			pthread_mutex_lock(&neighbor_links_mutex);
+			Topology::process_link_message(virtual_id, string(buffer), (map<int, Link>*)&neighbor_links);
+			pthread_mutex_unlock(&neighbor_links_mutex);
+
+			pthread_mutex_lock(&neighbor_change_lock);
+			neighbor_change = true;
+			pthread_mutex_unlock(&neighbor_change_lock);
+
+			pthread_mutex_lock(&vector_map_mutex);
+			initialize_distance_vector(&vector_map, &neighbor_links);
+			pthread_mutex_unlock(&vector_map_mutex);
+        }
+	}
+}
+
+void process_routing()
+{
+	#ifdef DEBUG
+		cout << "process_routing" << endl;
+	#endif
+
+	// Send your vector to neighbors and listen for theirs
+	fd_set read_flags,write_flags; 		
+    int sel;                      		// holds return value for select();
+	
+    double duration;
+    bool distance_vector_change = true;
+    clock_t start = clock();
+
+	while(true)
+	{	
+		duration = (clock() - start) / (double) CLOCKS_PER_SEC;
+
+		if (duration >= 10.0)
+		{
+			#ifdef DEBUG
+				cout << "process_routing: no changes for 10 seconds" << endl;
+			#endif
+			break;
+		}
+
+		FD_ZERO(&read_flags);
+        FD_ZERO(&write_flags);
+        FD_SET(node_socket, &read_flags);
+        FD_SET(node_socket, &write_flags);
+
+        sel = select(node_socket + 1, &read_flags, &write_flags, (fd_set*)0, &waitd);
+
+        // If an error with select
+        if(sel < 0)
+        {
+            continue;
+        }
+
+        // Socket ready for writing
+        if (FD_ISSET(node_socket, &write_flags) && distance_vector_change == true) 
+        {
+            FD_CLR(node_socket, &write_flags);
+
+            pthread_mutex_lock(&neighbor_links_mutex);
+            
+            for (map<int, DistanceVectorLink>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
+            {
+            	// Skip itself
+            	if (it->first == virtual_id)
+            	{
+            		continue;
+            	}
+
+	    		DistanceVectorLink link = it->second;
+	    		string links_string = serialize_vector(virtual_id, &neighbor_links);
+				const char* links_cstring = links_string.c_str();
+				
+				struct addrinfo* node_addr;
+				getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
+				Utility::send(node_socket, links_cstring, node_addr->ai_addr, node_addr->ai_addrlen);
+			}
+
+			pthread_mutex_unlock(&neighbor_links_mutex);
+        }
+
+        // Socket ready for reading
+        if (FD_ISSET(node_socket, &read_flags)) 
+        {
+            // Clear set
+            FD_CLR(node_socket, &read_flags);
+            
+			Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
+			list<DistanceVectorLink> dv_links = deserialize_vector(virtual_id, string(buffer));
+
+			pthread_mutex_lock(&vector_map_mutex);
+			distance_vector_change = update_distance_vector(virtual_id, &vector_map, dv_links); 
+			pthread_mutex_unlock(&vector_map_mutex);
+        }
+	}
+
+	// Tell manager that you converged, and display your table
+	Utility::send(manager_socket, "converged", NULL, NULL);
+	print_distance_vector(&vector_map);
+}
+
+
+void process_messages()
+{
+	#ifdef DEBUG
+		cout << "process_messages" << endl;
+	#endif
+
+	Message m = Message::deserialize(string(buffer));
+	cout <<  m.to_string() << endl;
+
+	// Pass the message along if this node is not the target
+	if (m.target_id != virtual_id)
+	{
+		m.append_sender(virtual_id);
+		string text = Message::serialize(m);
+		const char* cstr = text.c_str();
+
+		int hop = vector_map[m.target_id].next_hop;
+		DistanceVectorLink link = neighbor_links[hop];
+
+		#ifdef DEBUG
+			cout << "process_messages: passing message to: " << hop << endl;
+		#endif
+
+		struct addrinfo* node_addr;
+		getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
+		Utility::send(node_socket, cstr, node_addr->ai_addr, node_addr->ai_addrlen);
+	}
 }
 
 /*
@@ -161,18 +374,14 @@ int main (int argc, char* argv[])
 		return 1;
 	}
 
-	int virtual_id;
-	map<int, DistanceVectorLink> neighbor_links;
-	map<int, DistanceVectorLink> vector_map;
+	pthread_t manager_thread;
 
-	char * manager_host_name = argv[1];
-	int manager_socket;
-	int node_socket;
-	struct addrinfo hints, *servinfo, *p;
+	char* manager_host_name = argv[1];
+	
+	struct addrinfo *servinfo, *p;
 	int rv;
 	int numbytes;
 	struct sockaddr_storage their_addr;
-	char buffer[BUFFER_SIZE];
 	socklen_t addr_len;
 	char s[INET6_ADDRSTRLEN];
 
@@ -200,22 +409,32 @@ int main (int argc, char* argv[])
 		exit(1);
 	}	
 
+	#ifdef DEBUG
+		Utility::get_listening_port(manager_socket);
+	#endif
+
 	// Send connection message to the Manager
-	sprintf(buffer, "connection");
-	send(manager_socket, buffer, strlen(buffer), 0);
+	strncpy(buffer, "connection\0", sizeof("connection\0"));
+	Utility::send(manager_socket, buffer, NULL, NULL);
 
 	// Wait for virtual id assignment from Manager
-	if ((numbytes = recv(manager_socket, buffer, BUFFER_SIZE - 1 , 0)) == -1)
+	numbytes = Utility::receive(manager_socket, buffer, BUFFER_SIZE, 
+			NULL, NULL);
+	if (numbytes == -1)
 	{
 		perror("recv");
 		exit(1);
 	}
-	buffer[numbytes] = '\0';
 	virtual_id = atoi(buffer);
-
+	
 	// Calculate the new port
-	const char* port = Utility::int_to_string(START_PORT + virtual_id).c_str();
-	getaddrinfo(NULL, port, &hints, &servinfo);	
+	string port = Utility::int_to_string(START_PORT + virtual_id);
+	getaddrinfo(NULL, port.c_str(), &hints, &servinfo);	
+
+	#ifdef DEBUG
+		cout << "node id: " << virtual_id;
+		cout << ", port: " << port << endl;
+	#endif
 
 	// Loop through all the results and bind to the first we can
 	for(p = servinfo; p != NULL; p = p->ai_next) {
@@ -234,135 +453,45 @@ int main (int argc, char* argv[])
 		break;
 	}
 
-	// Node binded to the new port, notify Manager and close old socket
-	sprintf(buffer, "binded");
-	send(manager_socket, buffer, strlen(buffer), 0);
+	// Node binded to the new port, notify Manager
+	strncpy(buffer, "binded\0", sizeof("binded\0"));
+	Utility::send(manager_socket, buffer, NULL, NULL);
 
 	// Get information about node vector
-	numbytes = recv(manager_socket, buffer, BUFFER_SIZE - 1 , 0);
-	buffer[numbytes] = '\0';
+	numbytes = Utility::receive(manager_socket, buffer, BUFFER_SIZE, NULL, NULL);
 	list<Link> links = Topology::deserialize_node_links(virtual_id, string(buffer));
 	update_neighbors(&neighbor_links, links);
 
 	// Get ip addresses and ports
-	numbytes = recv(manager_socket, buffer, BUFFER_SIZE - 1 , 0);
-	buffer[numbytes] = '\0';
+	Utility::receive(manager_socket, buffer, BUFFER_SIZE, NULL, NULL);
 	links = Topology::deserialize_node_links(virtual_id, string(buffer));
 	update_neighbors(&neighbor_links, links);
+
 	initialize_distance_vector(&vector_map, &neighbor_links);
 
-	// Send your vector to neighbors and listen for theirs
-	fd_set read_flags,write_flags; 		// the flag sets to be used
-    struct timeval waitd = {10, 0};     // the max wait time for an event
-    int sel;                      		// holds return value for select();
-	int unchanged_counter = 0;
+	pthread_create(&manager_thread, NULL, manager_thread_handle, NULL);
 
-	while(true)
-	{	
-		FD_ZERO(&read_flags);
-        FD_ZERO(&write_flags);
-        FD_SET(manager_socket, &read_flags);
-        FD_SET(node_socket, &read_flags);
-        FD_SET(node_socket, &write_flags);
-
-        sel = select(node_socket + 1, &read_flags, &write_flags, (fd_set*)0, &waitd);
-
-        // If an error with select
-        if(sel < 0)
-        {
-            continue;
-        }
-
-        // Socket ready for reading
-        if (FD_ISSET(node_socket, &read_flags)) 
-        {
-            // Clear set
-            FD_CLR(node_socket, &read_flags);
-            
-			numbytes = recv(node_socket, buffer, BUFFER_SIZE - 1 , 0);
-			buffer[numbytes] = '\0';
-			list<DistanceVectorLink> dv_links = deserialize_vector(virtual_id, string(buffer));
-			bool updated =  update_distance_vector(virtual_id, &vector_map, dv_links); 
-
-			if (updated == true)
-			{
-				unchanged_counter = 0;
-			}
-			else
-			{
-				if (++unchanged_counter == neighbor_links.size() * 5)
-				{
-					break;
-				}
-			}
-        }
-
-        // Socket ready for writing
-        if (FD_ISSET(node_socket, &write_flags)) 
-        {
-            FD_CLR(node_socket, &write_flags);
-
-            for (map<int, DistanceVectorLink>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
-            {
-            	// Skip itself
-            	if (it->first == virtual_id)
-            	{
-            		continue;
-            	}
-
-	    		DistanceVectorLink link = it->second;
-	    		string links_string = serialize_vector(virtual_id, &neighbor_links);
-				const char* links_cstring = links_string.c_str();
-				
-				struct addrinfo* node_addr;
-				getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
-				sendto(node_socket, links_cstring, strlen(links_cstring), 0,
-						node_addr->ai_addr, node_addr->ai_addrlen);
-			}
-        }
-
-		sleep(1);
-	}
-
-	struct addrinfo* server_addr;
-	getaddrinfo(manager_host_name, SERVER_PORT, &hints, &server_addr);
-
-	// Tell manager that you converged, and display your table
-	sendto(node_socket, "converged", strlen("converged"), 0,
-		server_addr->ai_addr, server_addr->ai_addrlen);
-	print_distance_vector(&vector_map);
-
-
-	// Clear neighbor announcements
 	while (true)
 	{
-		numbytes = recv(node_socket, buffer, BUFFER_SIZE - 1 , 0);
-		buffer[numbytes] = '\0';
+		bool neighbor_change_flag;
+		pthread_mutex_lock(&neighbor_change_lock);
+		neighbor_change_flag = neighbor_change;
+		neighbor_change = false;
+		pthread_mutex_unlock(&neighbor_change_lock);
 
-		if (string(buffer).find("node") == string::npos)
+		if (neighbor_change_flag == true)
 		{
-			break;
+			process_routing();
+
+			process_messages();
+		}
+		else
+		{
+			sleep(1);
 		}
 	}
 
-	Message m = Message::deserialize(string(buffer));
-	cout <<  m.to_string() << endl;
-
-	// Pass the message along if this node is not the target
-	if (m.target_id != virtual_id)
-	{
-		m.append_sender(virtual_id);
-		string text = Message::serialize(m);
-		const char* cstr = text.c_str();
-
-		int hop = vector_map[m.target_id].next_hop;
-		DistanceVectorLink link = neighbor_links[hop];
-
-		struct addrinfo* node_addr;
-		getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
-		sendto(node_socket, cstr, strlen(cstr), 0,
-			node_addr->ai_addr, node_addr->ai_addrlen);
-	}
+	pthread_join(manager_thread, NULL);
 
 	freeaddrinfo(servinfo);
 	close(manager_socket);

@@ -7,6 +7,9 @@ string Utility::int_to_string(int number)
 {
 	stringstream ss;
 	ss << number;
+	#ifdef DEBUG
+		cout << "int_to_string: " << number << " to " << ss.str() << endl;
+	#endif
 	return ss.str();
 }
 
@@ -19,6 +22,9 @@ void* Utility::get_in_addr(struct sockaddr* sa)
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
 
+	#ifdef DEBUG
+		cout << "get_in_addr" << endl;
+	#endif
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
@@ -32,6 +38,10 @@ void Utility::set_addrinfo(const char* host, const char* port,
 	if ((rv = getaddrinfo(host, port, hints, &info)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 	}
+
+	#ifdef DEBUG
+		cout << "set_addrinfo" << endl;
+	#endif
 }
 
 /*
@@ -39,30 +49,51 @@ void Utility::set_addrinfo(const char* host, const char* port,
  * Stores data into the given buffer
  * Returns the size of data in bytes
  */
-// int Utility::receive(int socket, char* buffer, int buffer_size)
-// {
-// 	int numbytes;
-// 	if ((numbytes = recv(socket, buffer, buffer_size - 1 , 0)) == -1) {
-// 		perror("recvfrom");
-// 	}
-// 	buffer[numbytes] = '\0';
-// 	return numbytes;
-// }
+int Utility::receive(int socket, char* buffer, int buffer_size, 
+	struct sockaddr* their_addr, socklen_t* addr_len)
+{
+	#ifdef DEBUG
+		cout << "receive: started ... ";
+	#endif
+
+	int numbytes = recvfrom(socket, buffer, buffer_size - 1 , 0, 
+		their_addr, addr_len);
+
+	if (numbytes == -1) 
+	{
+		perror("recvfrom");
+	}
+
+	buffer[numbytes] = '\0';
+	
+	#ifdef DEBUG
+		cout << "message - " << buffer << endl;
+	#endif
+		
+	return numbytes;
+}
 
 /*
  * Sends the given message through the given socket
  * Returns the number of bytes sent
  */
-// int Utility::send(int socket, char* message, struct addrminfo* node_addr)
-// {
-// 	int numbytes;
-// 	if ((numbytes = sendto(socket, message, strlen(message), 0,
-// 			node_addr->ai_addr, node_addr->ai_addrlen)) == -1) 
-// 	{
-// 		perror("manager: send addresses");
-// 	}
-// 	return numbytes;
-// }
+int Utility::send(int socket, const char* message, 
+		struct sockaddr* addr, socklen_t addr_len)
+{
+	int numbytes = sendto(socket, message, strlen(message), 0,
+		addr, addr_len);
+
+	if (numbytes == -1) 
+	{
+		perror("manager: send addresses");
+	}
+
+	#ifdef DEBUG
+		cout << "send: message - " << message;
+		cout << ", bytes sent - " << numbytes << endl;
+	#endif
+	return numbytes;
+}
 
 /*
  * Returns the port the given soket is listening on
@@ -78,6 +109,10 @@ void Utility::set_addrinfo(const char* host, const char* port,
 	}
 	else
 	{
-    	return ntohs(sin.sin_port);
+		int result = ntohs(sin.sin_port);
+		#ifdef DEBUG
+			cout << "get_listening_port: " << result << endl;
+		#endif
+  		return result;  	
     }
  }

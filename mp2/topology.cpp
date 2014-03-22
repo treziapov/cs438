@@ -13,32 +13,40 @@ string Message::to_string()
 void Message::append_sender(int id)
 {
 	stringstream ss;
-	ss << senders << id << " ";
+	ss << senders << id;
 	this->senders = ss.str();
 }
 
 string Message::serialize(Message message)
 {
+	#ifdef DEBUG
+		cout << "message::serialize" << endl;
+	#endif
 	stringstream ss;
+	ss << "message;";
 	ss << message.source_id << ";";
 	ss << message.target_id << ";";
 	ss << (message.senders == "" ? "-" : message.senders) << ";";
-	ss << message.text; 
+	ss << message.text << ";"; 
 	return ss.str();
 }
 
 Message Message::deserialize(string text)
 {
+	#ifdef DEBUG
+		cout << "message::deserialize" << endl;
+	#endif
 	Message message;
 	char* token;
 	char* str = strdup(text.c_str());
 	token = strtok(str, ";");
+	token = strtok(NULL, ";");
 	message.source_id = atoi(token);
 	token = strtok(NULL, ";");
 	message.target_id = atoi(token);
 	token = strtok(NULL, ";");
 	message.senders = (token[0] == '-' ? "" : string(token));
-	token = strtok(NULL, "\0\n");
+	token = strtok(NULL, ";\0\n");
 	message.text = string(token);
 	free(str);
 	return message;
@@ -71,6 +79,10 @@ list<Message> Message::parse_message_file(string filename)
 			free(str);
 		}
 	}
+
+	#ifdef DEBUG
+		cout << "prase_message_file: messages - " << messages.size() << endl;
+	#endif
 
 	return messages;
 }
@@ -114,8 +126,8 @@ void Topology::parse_topology_file(string file)
 		char * token;	
 		while (getline (in, line))
 		{
-			char* str = strdup(line.c_str());
 			Link link;
+			char* str = strdup(line.c_str());
 			token = strtok(str, " ");
 			link.source_id = atoi(token);
 			token = strtok(NULL, " ");
@@ -163,6 +175,10 @@ void Topology::parse_topology_file(string file)
 		source_link->cost = it->cost;
 		target_link->cost = it->cost;
 	}
+
+	#ifdef DEBUG
+		cout << "parse_topology_file: numnodes - " << this->num_nodes << endl;
+	#endif
 }
 
 /*
@@ -194,6 +210,87 @@ void Topology::update_node_net_info(int id, string host, string port)
 		link->ip = host;
 		link->port = port;
 	}
+}
+
+/*
+ * 	
+ */
+string Topology::create_add_link_message(Link* link)
+{
+	stringstream ss;
+	ss << "link;";
+	ss << "source:" << link->source_id << ";";
+	ss << "target:" << link->target_id << ";";
+	ss << "cost:" << link->cost << ";";
+	ss << "ip:" << link->ip << ";";
+	ss << "port:" << link->port << ";";
+	return ss.str();
+}
+
+/*
+ *
+ */
+string Topology::create_remove_link_message(int id)
+{
+	stringstream ss;
+	ss << "unlink;" << id << ";";
+	return ss.str();
+}
+
+/*
+ *
+ */
+bool Topology::process_link_message(int id, string message, map<int, Link>* node_links)
+{
+	char* str = strdup(message.c_str());
+	char* token = strtok(str, ";:");
+	string first_token = string(token);
+	bool changed = false;
+
+	if (first_token == "link")
+	{	
+		Link link;
+		token = strtok(NULL, ";:");	// skip source label
+		token = strtok(NULL, ";:");
+		link.source_id = atoi(token); 
+		token = strtok(NULL, ";:");	// skip target label
+		token = strtok(NULL, ";:"); 
+		link.target_id = atoi(token);
+		token = strtok(NULL, ";:");	// skip cost label
+		token = strtok(NULL, ";:"); 
+		link.cost = atoi(token);
+		token = strtok(NULL, ";:");	// skip ip label
+		token = strtok(NULL, ";:"); 
+		link.ip = string(token);
+		token = strtok(NULL, ";:");	// skip port label
+		token = strtok(NULL, ";:"); 
+		link.port = string(token);
+
+		(*node_links)[link.target_id] = link;
+		changed = true;
+
+		cout << "now linked to node " << link.target_id;
+		cout << " with cost " << link.cost << endl; 
+	}
+	else if (first_token == "unlink")
+	{
+		token = strtok(NULL, ";:");
+		int node_id = atoi(token);
+			
+		Link* link = &(*node_links)[node_id];
+		link->cost = -1;
+
+		changed = true;
+
+		cout << "no longer linked to node " << node_id << endl;
+	}
+
+	#ifdef DEBUG
+		cout << "process_link_message" << endl;
+	#endif
+
+	free(str);
+	return changed;
 }
 
 /*
