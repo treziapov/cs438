@@ -39,7 +39,7 @@ char buffer[BUFFER_SIZE];
 bool neighbor_change = true;
 
 struct addrinfo hints;
-struct timeval waitd = {5, 0}; 
+struct timeval waitd = {20, 0}; 
 
 pthread_mutex_t neighbor_links_mutex;
 pthread_mutex_t vector_map_mutex;
@@ -256,10 +256,15 @@ void process_routing()
 	
     double duration;
     bool distance_vector_change = true;
-    clock_t start = clock();
+    clock_t start;
 
 	while(true)
 	{	
+		if (distance_vector_change == true)
+		{
+			start = clock();
+		}
+
 		duration = (clock() - start) / (double) CLOCKS_PER_SEC;
 
 		if (duration >= 10.0)
@@ -284,30 +289,33 @@ void process_routing()
         }
 
         // Socket ready for writing
-        if (FD_ISSET(node_socket, &write_flags) && distance_vector_change == true) 
+        if (FD_ISSET(node_socket, &write_flags)) 
         {
             FD_CLR(node_socket, &write_flags);
 
-            pthread_mutex_lock(&neighbor_links_mutex);
-            
-            for (map<int, DistanceVectorLink>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
+            if (distance_vector_change == true)
             {
-            	// Skip itself
-            	if (it->first == virtual_id)
-            	{
-            		continue;
-            	}
+	            pthread_mutex_lock(&neighbor_links_mutex);
+	            
+	            for (map<int, DistanceVectorLink>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
+	            {
+	            	// Skip itself
+	            	if (it->first == virtual_id)
+	            	{
+	            		continue;
+	            	}
 
-	    		DistanceVectorLink link = it->second;
-	    		string links_string = serialize_vector(virtual_id, &neighbor_links);
-				const char* links_cstring = links_string.c_str();
-				
-				struct addrinfo* node_addr;
-				getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
-				Utility::send(node_socket, links_cstring, node_addr->ai_addr, node_addr->ai_addrlen);
+		    		DistanceVectorLink link = it->second;
+		    		string links_string = serialize_vector(virtual_id, &neighbor_links);
+					const char* links_cstring = links_string.c_str();
+					
+					struct addrinfo* node_addr;
+					getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
+					Utility::send(node_socket, links_cstring, node_addr->ai_addr, node_addr->ai_addrlen);
+				}
+
+				pthread_mutex_unlock(&neighbor_links_mutex);
 			}
-
-			pthread_mutex_unlock(&neighbor_links_mutex);
         }
 
         // Socket ready for reading
