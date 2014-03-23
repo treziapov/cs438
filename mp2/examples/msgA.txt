@@ -1,0 +1,3 @@
+2 5 this message should take a different path after link 2<->5 is added!
+1 4 this message should take the same path after 1<->4 is added, but should change when 1<->3 breaks
+3 2 this message is not very interesting.

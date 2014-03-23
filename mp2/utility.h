@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define DEBUG true
+#define PRINT_INFO 0
 
 using namespace std;
 

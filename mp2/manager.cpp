@@ -13,7 +13,6 @@
 #define START_PORT 20000
 #define MANAGER_PORT "6000"
 #define BUFFER_SIZE 255
-#define DEBUG true
 
 using namespace std;
 
@@ -42,7 +41,7 @@ struct addrinfo hints;
  */
 void send_node_messages()
 {
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "debug: sending node_messages to nodes" << endl;
 	#endif
 
@@ -64,7 +63,7 @@ void send_node_messages()
  */
 void wait_for_convergence()
 {	
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "debug: wait for convergence" << endl;
 	#endif
 
@@ -104,8 +103,14 @@ void wait_for_convergence()
  		link.cost = atoi(token);
  		free(str);
 
- 		Link* source = &node_links[link.source_id];
- 		Link* target = &node_links[link.target_id];
+ 		Link* source = &topology.matrix[link.source_id][link.target_id];
+ 		Link* target = &topology.matrix[link.target_id][link.source_id];
+ 		source->source_id = link.source_id;
+ 		source->target_id = link.target_id;
+ 		source->cost = link.cost;
+ 		target->source_id = link.target_id;
+ 		target->target_id = link.source_id;
+ 		target->cost = link.cost;
  		struct addrinfo* source_addr;
 		struct addrinfo* target_addr;
 		string source_message;
@@ -129,17 +134,31 @@ void wait_for_convergence()
  		}
 
  		// Send the nodes their node_messages
- 		getaddrinfo(source->ip.c_str(), source->port.c_str(), &hints, &source_addr);
- 		getaddrinfo(target->ip.c_str(), target->port.c_str(), &hints, &target_addr);
+ 		Link source_link = node_links[link.source_id];
+ 		Link target_link = node_links[link.target_id];
+ 		getaddrinfo(source_link.ip.c_str(), source_link.port.c_str(), &hints, &source_addr);
+ 		getaddrinfo(target_link.ip.c_str(), target_link.port.c_str(), &hints, &target_addr);
 		Utility::send(server_socket, source_message.c_str(), source_addr->ai_addr, source_addr->ai_addrlen);
 		Utility::send(server_socket, target_message.c_str(), target_addr->ai_addr, target_addr->ai_addrlen);
 
-		#ifdef DEBUG
+		#if PRINT_INFO == 1
 			cout << "input_thread_handle: " << "source - " << source->ip;
 			cout << ":" << source->port;
 			cout << ", target - " << target->ip; 
 			cout << ":" << source->port << endl;
 		#endif
+
+		// Send change message to every node to start building routing tables again
+		for (int id = 1; id < topology.num_nodes; id++)
+		{
+			Link* node = &topology.matrix[id][id];
+			string text = "change";
+			const char* cstr = text.c_str();
+
+			struct addrinfo* node_addr;
+			getaddrinfo(node->ip.c_str(), node->port.c_str(), &hints, &node_addr);
+			Utility::send(server_socket, cstr, node_addr->ai_addr, node_addr->ai_addrlen);
+		}
 
 		wait_for_convergence();
 
@@ -223,7 +242,7 @@ int main(int argc, char* arv[])
 	    link.port = node_port;
 	    node_links[virtual_id] = link;
 
-		#ifdef DEBUG
+		#if PRINT_INFO == 1 == true
 			cout << "node id: " << virtual_id;
 			cout << ", port: " << node_port << endl;
 		#endif
@@ -237,14 +256,7 @@ int main(int argc, char* arv[])
 
 		// Wait for the node to bind to the new port
 		Utility::receive(server_socket, buffer, BUFFER_SIZE, 
-			(struct sockaddr *)&their_addr, &addr_len);
-
-		// Send information about links
-		list<Link> neighbor_links = topology.get_node_links(virtual_id);
-		string neighbors_string = Topology::serialize_node_links(neighbor_links);
-		const char* neighbors_cstring = neighbors_string.c_str();
-		Utility::send(server_socket, neighbors_cstring, 
-			(struct sockaddr*)&their_addr, addr_len);
+			(struct sockaddr*)&their_addr, &addr_len);
 
 		// Go to next stage if all nodes connected
 		if (virtual_id == topology.num_nodes - 1)
@@ -260,14 +272,14 @@ int main(int argc, char* arv[])
 
 	for (map<int, Link>::iterator it = node_links.begin(); it != node_links.end(); it++)
 	{
-		// Send information about links
+		// Send final information about links
 		Link* self = &it->second;
 		list<Link> links = topology.get_node_links(it->first);
 		string links_string = Topology::serialize_node_links(links);
 		const char* links_cstring = links_string.c_str();
 
 		struct addrinfo* node_addr;
-		#ifdef DEBUG
+		#if PRINT_INFO == 1
 			cout << "sending neighbor info to " << self->ip;
 			cout << ":" << self->port << endl;
 		#endif

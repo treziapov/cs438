@@ -6,7 +6,7 @@
 #include <sstream>
 #include <map>
 
-#define DEBUG true
+#define PRINT_INFO 0
 
 using namespace std;
 

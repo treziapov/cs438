@@ -7,7 +7,7 @@ string Utility::int_to_string(int number)
 {
 	stringstream ss;
 	ss << number;
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "int_to_string: " << number << " to " << ss.str() << endl;
 	#endif
 	return ss.str();
@@ -22,7 +22,7 @@ void* Utility::get_in_addr(struct sockaddr* sa)
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
 
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "get_in_addr" << endl;
 	#endif
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
@@ -39,7 +39,7 @@ void Utility::set_addrinfo(const char* host, const char* port,
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 	}
 
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "set_addrinfo" << endl;
 	#endif
 }
@@ -52,7 +52,7 @@ void Utility::set_addrinfo(const char* host, const char* port,
 int Utility::receive(int socket, char* buffer, int buffer_size, 
 	struct sockaddr* their_addr, socklen_t* addr_len)
 {
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "receive: started ... ";
 	#endif
 
@@ -66,7 +66,7 @@ int Utility::receive(int socket, char* buffer, int buffer_size,
 
 	buffer[numbytes] = '\0';
 	
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "message - " << buffer << endl;
 	#endif
 		
@@ -88,7 +88,7 @@ int Utility::send(int socket, const char* message,
 		perror("manager: send addresses");
 	}
 
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "send: message - " << message;
 		cout << ", bytes sent - " << numbytes << endl;
 	#endif
@@ -110,7 +110,7 @@ int Utility::send(int socket, const char* message,
 	else
 	{
 		int result = ntohs(sin.sin_port);
-		#ifdef DEBUG
+		#if PRINT_INFO == 1
 			cout << "get_listening_port: " << result << endl;
 		#endif
   		return result;  	

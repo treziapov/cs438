@@ -1,0 +1,27 @@
+now linked to node 1 with cost 1
+now linked to node 2 with cost 2
+now linked to node 4 with cost 4
+now linked to node 5 with cost 3
+
+1 1: 3 1
+2 2: 3 2
+3 0: 3
+4 4: 3 4
+5 3: 3 5
+
+from 1 to 4 hops 1 3 message this message should take the same path after 1<->4 is added, but should change when 1<->3 breaks
+from 3 to 2 hops 3 message this message is not very interesting.
+from 2 to 5 hops 2 3 message this message should take a different path after link 2<->5 is added!
+from 3 to 2 hops 3 message this message is not very interesting.
+from 1 to 4 hops 1 3 message this message should take the same path after 1<->4 is added, but should change when 1<->3 breaks
+from 3 to 2 hops 3 message this message is not very interesting.
+from 1 to 4 hops 1 3 message this message should take the same path after 1<->4 is added, but should change when 1<->3 breaks
+no longer linked to node 1
+
+1 10: 3 4 1
+2 2: 3 2
+3 0: 3
+4 4: 3 4
+5 3: 3 5
+
+from 3 to 2 hops 3 message this message is not very interesting.

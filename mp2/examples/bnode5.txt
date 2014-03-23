@@ -1,0 +1,39 @@
+now linked to node 3 with cost 1
+now linked to node 7 with cost 9
+
+1 3 3
+2 3 8
+3 3 1
+4 3 9
+5 5 0
+6 3 9
+7 7 9
+
+from 1 to 7 hops 1 3 5 message the path should change every time, although the 4th sending should take the same path as the 1st
+no longer linked to node 3
+
+1 7 23
+2 7 18
+3 7 25
+4 7 18
+5 5 0
+6 7 17
+7 7 9
+
+
+1 7 24
+2 7 19
+3 7 26
+4 7 18
+5 5 0
+6 7 17
+7 7 9
+
+
+1 7 50
+2 7 55
+3 7 48
+4 7 18
+5 5 0
+6 7 17
+7 7 9

@@ -13,13 +13,13 @@ string Message::to_string()
 void Message::append_sender(int id)
 {
 	stringstream ss;
-	ss << senders << id;
+	ss << senders << id << " ";
 	this->senders = ss.str();
 }
 
 string Message::serialize(Message message)
 {
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "message::serialize" << endl;
 	#endif
 	stringstream ss;
@@ -33,7 +33,7 @@ string Message::serialize(Message message)
 
 Message Message::deserialize(string text)
 {
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "message::deserialize" << endl;
 	#endif
 	Message message;
@@ -80,7 +80,7 @@ list<Message> Message::parse_message_file(string filename)
 		}
 	}
 
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "prase_message_file: messages - " << messages.size() << endl;
 	#endif
 
@@ -176,7 +176,7 @@ void Topology::parse_topology_file(string file)
 		target_link->cost = it->cost;
 	}
 
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "parse_topology_file: numnodes - " << this->num_nodes << endl;
 	#endif
 }
@@ -277,15 +277,14 @@ bool Topology::process_link_message(int id, string message, map<int, Link>* node
 		token = strtok(NULL, ";:");
 		int node_id = atoi(token);
 			
-		Link* link = &(*node_links)[node_id];
-		link->cost = -1;
+		(*node_links).erase(node_id);
 
 		changed = true;
 
 		cout << "no longer linked to node " << node_id << endl;
 	}
 
-	#ifdef DEBUG
+	#if PRINT_INFO == 1
 		cout << "process_link_message" << endl;
 	#endif
 
