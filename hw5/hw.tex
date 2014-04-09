@@ -1,0 +1,133 @@
+% ---------
+%  Compile with "pdflatex hw0".
+% --------
+%!TEX TS-program = pdflatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[11pt]{article}
+\usepackage{jeffe, handout, graphicx, fancyvrb}
+\usepackage{tikz}				  % Trees
+\usepackage{color}				% Coloring
+\usepackage{amsmath}			% Math multilining
+\usepackage[utf8]{inputenc}		% Allow some non-ASCII Unicode in source
+
+% =========================================================
+%   Define common stuff for solution headers
+% =========================================================
+\Class{CS 438}
+\Semester{Spring 2014}
+\Authors{1}
+\AuthorOne{Timur Reziapov}{reziapo1}
+% =========================================================
+\begin{document}
+
+% ---------------------------------------------------------
+\HomeworkHeader{5}
+\begin{enumerate}[1.]
+\item % Problem 1
+  \textbf{
+    Why don't we use all-software routers?
+  }
+  Hardware routers provide better total throughput because they're specialized for routing, PCs have a lot of overhead due to their general utility. Software routers are also not as scalable, being practical in small home networks, and may not be able to 'speak' all routing protocols.
+
+  \textbf{
+    What is the benefit of specialized hardware (interconnects, hardware queues, etc)?
+  }
+  Specialized hardware can be used to achieve very low latency and very high bandwidth, in comparison to software.
+  
+\item % Skip Problem 2
+  \textbf{
+    Completed in Homework 4
+  }
+\item % Problem 3
+  \begin{enumerate}[(a)]
+  \item 
+    \textbf{
+      Number of stages to route packets for $n = 64$:
+    }
+
+    $N$ inputs requires $\log_2N$ stages, so:
+    \begin{align*}
+      \log_2 64 \ =\ 6 \text{ (stages)} 
+    \end{align*}
+
+  \item
+    \textbf{
+      Number of switches required for n = 64:
+    }
+
+    At each stage, we need $N/2$ switches, so:
+    \begin{align*}
+      N/2 \times \log_2 N = 32 \times \log_2 64 = 192 \text{ (switches)}
+    \end{align*}
+  \item
+    \textbf{
+      Recurrence T(n) for the number of switches in a Batcher 
+      network of size n x n:
+    }
+    From the description, for $n > 2$:
+    \begin{align*}
+      T(n)\ =&\ 2 \times T(n/2) + n/2 \times \log_2 n \\
+      T(2)\ =&\ 1 \\
+    \end{align*}
+  \item
+    \textbf{
+      Number of switches required for n = 32:
+    }
+    \begin{align*}
+      T(4)\ &=\ 2 + 4 \ &=\ 6 \\
+      T(8)\ &=\ 2 \times 6 + 4 \times 3 \ &=\ 24 \\
+      T(16)\ &=\ 2 \times 24 + 8 \times 4 \ &=\ 80 \\
+      T(32)\ &=\ 2 \times 80 + 16 \times 5 \ &=\ 240 \\      
+    \end{align*}
+  \end{enumerate}
+\item % Problem 4
+  \begin{enumerate}
+  \item
+    \textbf{
+      Part of the header that concerns fragmentation:
+    }
+    Fragmentation is done at the IP layer and each packet will be ftagmented into 4 fragments. 20 bytes will be used for the IP header, so there will be 1480 bytes of payload among the 4 packets.
+
+    Packet 1: Ident: x,  More-Fragments: Yes, Offset: 0, Payload Length: 376
+    (20 bytes of standard header and 4 bytes of options)
+    Packet 2: Ident: x, More-Fragments: Yes, Offset: 376, Payload Length: 376
+    Packet 3: Ident: x, More-Fragments: Yes, Offset, 752, Payload Length: 376
+    Packet 4: Ident: x, More-Fragments: No, Offset, 1128, Payload Length: 352
+  \item 
+    \textbf{
+      Bytes sent by host:
+    }
+    A sends 1500 bytes by Ethernet. The Ethernet header size is 22 bytes and Ethernet checksum is 4 bytes. Total of 1526 bytes sent.
+
+    \textbf{
+      Bytes received by host:
+    }
+    B receives 4 packets with 1480 bytes of IP payload and each has a 20 byte IP header. Total of 1560 bytes received.
+
+  \item 
+    \textbf{
+      Probability that entire sequence of packets arrives 
+      without retransmission: 
+    }
+    Because any fragment loss will result in retransmission of the whole packet, the probability is $p^4$.
+
+  \item 
+    \textbf{
+      Long-term expected efficiency of point-to-point link:
+    }
+    Probability of receiving a packet without retransmission, $p = {1/5}^4 = 1/625$. On average, a pakcet will need to be retransmitted $1/p = 625$ times.
+    The effieciency of the point to point link is:
+    \begin{align*}
+      \frac{1500-20-20}{625 \times (1480 + 20 \times 4)} =
+      \frac{1460}{625 \times 1560} = 14.9744\%
+    \end{align*}
+
+  \item 
+    \textbf{
+      What happens to the last fragment at the receiver?
+    }   
+    The fragment will be buffered, eventually it will time out and get discarded. There are no other fragments with this identifier, so receiver will expect the other fragments to arrive and buffer, but these fragments have already been received and discarded.
+  \end{enumerate} 
+\end{enumerate}
+\end{document}
