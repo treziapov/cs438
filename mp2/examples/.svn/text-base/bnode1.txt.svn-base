@@ -1,0 +1,52 @@
+now linked to node 2 with cost 5
+now linked to node 3 with cost 2
+
+1 1 0
+2 2 5
+3 3 2
+4 2 6
+5 3 3
+6 2 6
+7 2 9
+
+from 1 to 7 hops 1 message the path should change every time, although the 4th sending should take the same path as the 1st
+
+1 1 0
+2 2 5
+3 3 2
+4 2 6
+5 3 3
+6 2 6
+7 3 12
+
+from 1 to 7 hops 1 message the path should change every time, although the 4th sending should take the same path as the 1st
+
+1 1 0
+2 2 5
+3 3 2
+4 2 6
+5 2 23
+6 2 6
+7 2 14
+
+from 1 to 7 hops 1 message the path should change every time, although the 4th sending should take the same path as the 1st
+
+1 1 0
+2 2 5
+3 3 2
+4 2 6
+5 2 24
+6 2 23
+7 2 15
+
+from 1 to 7 hops 1 message the path should change every time, although the 4th sending should take the same path as the 1st
+
+1 1 0
+2 2 5
+3 3 2
+4 3 32
+5 3 50
+6 3 49
+7 3 41
+
+from 1 to 7 hops 1 message the path should change every time, although the 4th sending should take the same path as the 1st

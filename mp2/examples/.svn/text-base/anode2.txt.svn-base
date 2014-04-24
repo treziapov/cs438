@@ -1,0 +1,31 @@
+now linked to node 3 with cost 2
+
+1 3: 2 3 1
+2 0: 2
+3 2: 2 3
+4 6: 2 3 4
+5 5: 2 3 5
+
+from 3 to 2 hops 3 2 message this message is not very interesting.
+from 2 to 5 hops 2 message this message should take a different path after link 2<->5 is added!
+now linked to node 5 with cost 1
+
+1 3: 2 3 1
+2 0: 2
+3 2: 2 3
+4 6: 2 3 4
+5 1: 2 5
+
+from 3 to 2 hops 3 2 message this message is not very interesting.
+from 2 to 5 hops 2 message this message should take a different path after link 2<->5 is added!
+from 2 to 5 hops 2 message this message should take a different path after link 2<->5 is added!
+from 3 to 2 hops 3 2 message this message is not very interesting.
+
+1 12: 2 3 4 1
+2 0: 2
+3 2: 2 3
+4 6: 2 3 4
+5 1: 2 5
+
+from 2 to 5 hops 2 message this message should take a different path after link 2<->5 is added!
+from 3 to 2 hops 3 2 message this message is not very interesting.

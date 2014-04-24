@@ -30,5 +30,7 @@ class Utility
 		static int receive(int socket, char* buffer, int buffer_size, 
 			struct sockaddr* their_addr, socklen_t* addr_len);
 		static int send(int socket, const char* message, 
-			struct sockaddr* addr, socklen_t addr_len);		
+			struct sockaddr* addr, socklen_t addr_len);
+
+		
 };
