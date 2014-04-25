@@ -236,7 +236,7 @@ int main(int argc, char* arv[])
 	    link.port = node_port;
 	    node_links[virtual_id] = link;
 
-		#if PRINT_INFO == 1 == true
+		#if PRINT_INFO == 1
 			cout << "node id: " << virtual_id;
 			cout << ", port: " << node_port << endl;
 		#endif
