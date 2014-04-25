@@ -13,7 +13,7 @@
 #define START_PORT 20000
 #define MANAGER_PORT "6000"
 #define BUFFER_SIZE 255
-#define PRINT_INFO 1
+#define PRINT_INFO 0
 
 using namespace std;
 
@@ -73,7 +73,9 @@ void wait_for_convergence()
 		Link* node = &topology.matrix[id][id];
 		struct addrinfo* node_addr;
 		getaddrinfo(node->ip.c_str(), node->port.c_str(), &hints, &node_addr);
-		cout << "\t waiting for convergence of node " << id << endl;
+		#if PRINT_INFO == 1
+			cout << "\t waiting for convergence of node " << id << endl;
+		#endif
 		Utility::receive(server_socket, buffer, BUFFER_SIZE,
 			(struct sockaddr*)&node_addr, &node_addr->ai_addrlen);
 	}

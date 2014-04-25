@@ -63,9 +63,9 @@ string serialize_vector(int id, map<int, DistanceVectorLink>* links)
 		ss << it->second.target_id << "-" << it->second.cost << ";";
 	}
 
-	//#if PRINT_INFO == 1
+	#if PRINT_INFO == 1
 		cout << endl << "serialize_vector: " << ss.str() << endl << endl;
-	//#endif
+	#endif
 	return ss.str();
 }
 
@@ -134,9 +134,7 @@ void update_neighbors(map<int, DistanceVectorLink>* link_map, list<Link> links)
  */
 void initialize_distance_vector(map<int, DistanceVectorLink>* link_map, map<int, DistanceVectorLink>* neighbor_map)
 {
-	cout << "link map size: " << link_map->size() << endl;
 	link_map->clear();
-	cout << "link map size: " << link_map->size() << endl;
 
 	for (map<int, DistanceVectorLink>::iterator it = neighbor_map->begin(); it != neighbor_map->end(); it++)
 	{
@@ -173,8 +171,8 @@ void print_distance_vector(map<int, DistanceVectorLink>* link_map)
 		cout << table;
 	}
 	else {
-		#if PRINTINFO == 1
-			count << table;
+		#if PRINT_INFO == 1
+			cout << table;
 		#endif
 	}
 	previous_table = table;
@@ -192,9 +190,18 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list
 	for (list<DistanceVectorLink>::iterator it = neighbor_vector.begin(); it != neighbor_vector.end(); it++)
 	{
 		link_to_neighbor = &(*link_map)[it->source_id];
-		if (link_to_neighbor->cost < 0) 
+		if (link_to_neighbor->cost <= 0) 
 		{
-			cout << "negative distance, link - " << it->source_id << "-" << it->target_id << endl;
+			#if PRINT_INFO == 1
+				cout << "negative distance, link - " << it->source_id << "-" << it->target_id << endl;
+			#endif
+			continue;
+		}
+		if (it->cost <= 0) 
+		{
+			#if PRINTF_INFO == 1
+				cout << "negative/zero link cost" << endl;
+			#endif
 			continue;
 		}
 		current_cost = it->cost + link_to_neighbor->cost;
@@ -206,7 +213,12 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list
 			new_link.source_id = id;
 			new_link.target_id = it->target_id;
 			new_link.cost = current_cost;
-			new_link.next_hop = it->source_id;
+			new_link.next_hop = link_to_neighbor->next_hop;
+
+			#if PRINT_INFO == 1
+				cout << "\t ADDING link to " << it->target_id << " via " << it->source_id <<  
+					" from " << (*link_map)[it->target_id].cost << " to " << current_cost << endl;
+			#endif
 
 			(*link_map)[it->target_id] = new_link;
 			updated = true;
@@ -214,10 +226,15 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list
 		// If there is a shorter path to some node through this neighbor, update
 		else if (current_cost < (*link_map)[it->target_id].cost)
 		{
+			#if PRINT_INFO == 1
+				cout << "\t UPDATING link to " << it->target_id << " via " << it->source_id <<  
+					" from " << (*link_map)[it->target_id].cost << " to " << current_cost << endl;
+			#endif
+
 			DistanceVectorLink* link = &(*link_map)[it->target_id];
 			link->source_id = id;
 			link->cost = current_cost;
-			link->next_hop = it->source_id;
+			link->next_hop = link_to_neighbor->next_hop;
 			updated = true;
 		}
 	}
