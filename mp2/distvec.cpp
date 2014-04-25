@@ -63,9 +63,9 @@ string serialize_vector(int id, map<int, DistanceVectorLink>* links)
 		ss << it->second.target_id << "-" << it->second.cost << ";";
 	}
 
-	#if PRINT_INFO == 1
+	//#if PRINT_INFO == 1
 		cout << endl << "serialize_vector: " << ss.str() << endl << endl;
-	#endif
+	//#endif
 	return ss.str();
 }
 
@@ -134,7 +134,9 @@ void update_neighbors(map<int, DistanceVectorLink>* link_map, list<Link> links)
  */
 void initialize_distance_vector(map<int, DistanceVectorLink>* link_map, map<int, DistanceVectorLink>* neighbor_map)
 {
+	cout << "link map size: " << link_map->size() << endl;
 	link_map->clear();
+	cout << "link map size: " << link_map->size() << endl;
 
 	for (map<int, DistanceVectorLink>::iterator it = neighbor_map->begin(); it != neighbor_map->end(); it++)
 	{
@@ -190,6 +192,11 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list
 	for (list<DistanceVectorLink>::iterator it = neighbor_vector.begin(); it != neighbor_vector.end(); it++)
 	{
 		link_to_neighbor = &(*link_map)[it->source_id];
+		if (link_to_neighbor->cost < 0) 
+		{
+			cout << "negative distance, link - " << it->source_id << "-" << it->target_id << endl;
+			continue;
+		}
 		current_cost = it->cost + link_to_neighbor->cost;
 
 		// If the target wasn't reachable from this node before, add it
@@ -208,6 +215,7 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list
 		else if (current_cost < (*link_map)[it->target_id].cost)
 		{
 			DistanceVectorLink* link = &(*link_map)[it->target_id];
+			link->source_id = id;
 			link->cost = current_cost;
 			link->next_hop = it->source_id;
 			updated = true;
@@ -230,7 +238,6 @@ void* manager_thread_handle(void* data)
 
 	while (true)
 	{
-
 		FD_ZERO(&read_manager_flags);
         FD_SET(manager_socket, &read_manager_flags);
 
