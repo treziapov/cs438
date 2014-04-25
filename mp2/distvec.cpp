@@ -170,6 +170,11 @@ void print_distance_vector(map<int, DistanceVectorLink>* link_map)
 	{
 		cout << table;
 	}
+	else {
+		#if PRINTINFO == 1
+			count << table;
+		#endif
+	}
 	previous_table = table;
 }
 
@@ -360,6 +365,19 @@ void process_messages()
 	#if PRINT_INFO == 1
 		cout << "process_messages" << endl;
 	#endif
+	
+	while (true) 
+	{
+		Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
+		if (string(buffer) == "start messages")
+		{
+			break;
+		}
+		else 
+		{
+			continue;
+		}
+	}
 
 	while (true)
 	{
@@ -380,7 +398,6 @@ void process_messages()
 		// Pass the message along if this node is not the target
 		if (m.target_id != virtual_id)
 		{
-
 			string text = Message::serialize(m);
 			const char* cstr = text.c_str();
 
@@ -388,8 +405,7 @@ void process_messages()
 
 			pthread_mutex_lock(&neighbor_links_mutex);
 			DistanceVectorLink link = neighbor_links[hop];
-			pthread_mutex_unlock(&neighbor_links_mutex);
-			
+			pthread_mutex_unlock(&neighbor_links_mutex);	
 
 			#if PRINT_INFO == 1
 				cout << "process_messages: passing message to: " << hop << endl;
@@ -528,7 +544,6 @@ int main (int argc, char* argv[])
 			pthread_mutex_unlock(&neighbor_links_mutex);
 
 			process_routing();
-
 			process_messages();
 
 			sleep(1);

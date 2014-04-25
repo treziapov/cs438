@@ -322,9 +322,9 @@ string serialize_lsa(int id, map<int, Link>* links)
 		ss << it->second.target_id << "-" << it->second.cost << ";";
 	}
 
-	//#if PRINT_INFO == 1
+	#if PRINT_INFO == 1
 		cout << "serialize_lsa: " << ss.str() << endl;
-	//#endif
+	#endif
 	return ss.str();
 }
 
