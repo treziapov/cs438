@@ -12,7 +12,7 @@
 #define START_PORT 20000
 #define SERVER_PORT "6000"
 #define BUFFER_SIZE 255
-#define PRINT_INFO 0
+#define PRINT_INFO 1
 
 using namespace std;
 

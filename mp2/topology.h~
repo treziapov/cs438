@@ -1,12 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <fstream>
 #include <list>
 #include <sstream>
 #include <map>
 
-#define PRINT_INFO 0
+#define PRINT_INFO 1
 
 using namespace std;
 

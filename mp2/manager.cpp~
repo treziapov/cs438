@@ -125,7 +125,7 @@ void wait_for_convergence()
 		for (list<Message>::iterator it = node_messages.begin(); it != node_messages.end(); it++)
 		{
 			int id = it->source_id;
-			Link* node = &topology.matrix[id][id];
+			Link* node = topology.matrix[id][id];
 			string text = Message::serialize(*it);
 			const char* cstr = text.c_str();
 
