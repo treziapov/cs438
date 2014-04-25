@@ -215,7 +215,7 @@ bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list
 		else if (current_cost < (*link_map)[it->target_id].cost)
 		{
 			DistanceVectorLink* link = &(*link_map)[it->target_id];
-			link->source_id = id;
+			link->source_i
 			link->cost = current_cost;
 			link->next_hop = it->source_id;
 			updated = true;

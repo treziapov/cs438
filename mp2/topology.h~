@@ -7,7 +7,7 @@
 #include <sstream>
 #include <map>
 
-#define PRINT_INFO 0
+#define PRINT_INFO 1
 
 using namespace std;
 

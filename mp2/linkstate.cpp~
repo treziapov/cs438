@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <map>
@@ -7,6 +6,8 @@
 #include "utility.h"
 #include <cstdio>
 #include <ctime>
+#include <queue>
+#include <climits>
 
 #define START_PORT 20000
 #define SERVER_PORT "6000"
@@ -15,15 +16,97 @@
 
 using namespace std;
 
-class DistanceVectorLink : public Link
+struct LSA
 {
-	public:
-		int next_hop;	
+	int node_id;
+	string encoded_message;
+};
 
-		DistanceVectorLink() : Link()
+class Node
+{
+public:
+	int id;
+	int distance;
+
+	map<int, int> neighbor_costs;
+	Node* parent;
+
+	Node() 
+	{
+		parent = NULL;
+		distance = INT_MAX;
+	};
+
+	int operator<(const Node& other) const
+	{
+		return distance > other.distance;
+	}
+};
+
+class Graph
+{
+public:
+	map<int, Node> nodes;
+
+	bool add_link_nodes(list<Link> links)
+	{
+		#if PRINT_INFO == 1
+			cout << "add_link_nodes: change";
+		#endif
+		bool changed = false;
+
+		for (list<Link>::iterator it = links.begin(); it != links.end(); it++)
 		{
-			next_hop = -1;
-		};
+			Link link = (*it);
+
+			if (nodes.count(link.source_id) == 0)
+			{
+				Node new_node;
+				new_node.id = link.source_id;
+
+				nodes[link.source_id] = new_node;
+				changed = true;
+			}
+			if (nodes[link.source_id].neighbor_costs.count(link.target_id) == 0)
+			{
+				nodes[link.source_id].neighbor_costs[link.target_id] = link.cost;
+				changed = true;
+			}
+
+			if (nodes.count(link.target_id) == 0)
+			{
+				Node new_node;
+				new_node.id = link.target_id;
+				new_node.neighbor_costs[link.source_id] = link.cost;
+				nodes[link.target_id] = new_node;
+				changed = true;
+			}
+			if (nodes[link.target_id].neighbor_costs.count(link.source_id) == 0)
+			{
+				nodes[link.target_id].neighbor_costs[link.source_id] = link.cost;
+				changed = true;
+			}
+		}
+
+		#if PRINT_INFO == 1
+			cout << " - " << (changed ? "yes" : "no") << endl;
+		#endif
+		return changed;
+	};
+
+	void clear()
+	{
+		#if PRINT_INFO == 1
+			cout << "graph clear" << endl;
+		#endif
+		for (map<int, Node>::iterator it = nodes.begin(); it != nodes.end(); it++)
+		{
+			it->second.neighbor_costs.clear();
+			it->second.parent = NULL;
+		}
+		nodes.clear();
+	}
+
 };
 
 /*
@@ -33,8 +116,12 @@ int virtual_id;
 int manager_socket;
 int node_socket;
 string previous_table = "";
-map<int, DistanceVectorLink> neighbor_links;
-map<int, DistanceVectorLink> vector_map;
+map<int, Link> neighbor_links;
+map<int, Link> topology_map;
+map<int, list<int> > routing_table;
+Graph graph;
+list<LSA> lsa_to_send;
+
 char buffer[BUFFER_SIZE];
 bool neighbor_change = true;
 
@@ -42,18 +129,190 @@ struct addrinfo hints;
 struct timeval waitd = {10, 0}; 
 
 pthread_mutex_t neighbor_links_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t vector_map_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t topology_map_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t neighbor_change_lock = PTHREAD_MUTEX_INITIALIZER;
+
+priority_queue<Node> update_priority(priority_queue<Node>* pqueue, Node node)
+{
+	#if PRINT_INFO == 1
+		cout << "update_priority: node";
+	#endif
+
+	priority_queue<Node> new_pqueue;
+	while (!pqueue->empty())
+	{
+		Node curr = pqueue->top();
+		pqueue->pop();
+
+		if (curr.id == node.id)
+		{
+			new_pqueue.push(node);
+			#if PRINT_INFO == 1
+				cout << " - " << node.id;
+				cout << ", changed from " << curr.distance;
+				cout << " to " << node.distance << endl;
+			#endif
+		}
+		else
+		{
+			new_pqueue.push(curr);
+		}
+	}
+
+	return new_pqueue;
+}
+
+/*
+ * Uses Djikstra's Algorithm
+ */
+void build_routing_table()
+{
+	#if PRINT_INFO == 1
+		cout << "build_routing_table" << endl;
+	#endif
+	map<int, int> distance_map;
+	priority_queue<Node> pqueue;
+
+	// Initialize priority queue
+	for (map<int, Node>::iterator it = graph.nodes.begin(); it != graph.nodes.end(); it++)
+	{
+		it->second.distance = INT_MAX;
+		distance_map[it->first] = INT_MAX;
+		pqueue.push(it->second);
+	}
+
+	// Initialize start node
+	Node* node = &graph.nodes[virtual_id];
+	distance_map[virtual_id] = 0;
+	node->distance = 0;
+	pqueue = update_priority(&pqueue, *node);
+
+	while(!pqueue.empty())
+	{
+		Node curr = pqueue.top();
+		pqueue.pop();
+
+		#if PRINT_INFO == 1
+			cout << "djikstra: current node - " << curr.id;
+			cout << ", priority - " << curr.distance << endl;
+		#endif
+
+		if (distance_map[curr.id] == INT_MAX)
+		{
+			perror("djikstra: INFINITY distance encountered");
+			break;
+		}
+
+		for (map<int, int>::iterator it = curr.neighbor_costs.begin(); it != curr.neighbor_costs.end(); it++)
+		{
+			int neighbor_id = it->first;
+			int distance = it->second;
+			int alternative = distance + distance_map[curr.id];
+
+			if (alternative < distance_map[neighbor_id])
+			{
+				distance_map[neighbor_id] = alternative;
+				graph.nodes[neighbor_id].distance = alternative;
+				graph.nodes[neighbor_id].parent = &graph.nodes[curr.id];
+				pqueue = update_priority(&pqueue, graph.nodes[neighbor_id]);
+			}
+		}
+	}
+
+	#if PRINT_INFO == 1
+		cout << "build_routing_table: djikstra's finished" << endl;
+	#endif
+
+	for (map<int, list<int> >::iterator it = routing_table.begin(); it != routing_table.end(); it++)
+	{
+		it->second.clear();
+	}
+
+	Node* parent;
+	for (map<int, Node>::iterator it = graph.nodes.begin(); it != graph.nodes.end(); it++)
+	{
+		if (it->first == virtual_id)
+		{
+			continue;
+		}
+
+		int target_id = it->first;
+		parent = graph.nodes[target_id].parent;
+		routing_table[target_id].push_front(target_id);
+
+		while (parent != NULL)
+		{
+			routing_table[target_id].push_front(parent->id);
+			parent = parent->parent;
+		}
+	}
+}
+
+void print_routing_table()
+{
+	#if PRINT_INFO == 1
+		cout << "print_routing_table: size - " << routing_table.size() << endl;
+	#endif
+
+	stringstream ss;
+	ss << endl;
+
+	for (int i = 1; i <= routing_table.size() + 1; i++)
+	{
+		if (i == virtual_id)
+		{
+			ss << i << " 0: " << i << endl;
+			continue;
+		}
+
+		ss << i << " " << graph.nodes[i].distance << ":";
+		
+		#if PRINT_INFO == 2
+			cout << "print_routing_table: node - " << i;
+			cout <<  ", table size - " << routing_table[i].size() << endl;
+		#endif
+		for (list<int>::iterator it = routing_table[i].begin(); it != routing_table[i].end(); it++)
+		{
+			ss << " " << (*it); 
+		}
+
+		ss << endl;
+	}
+
+	string table = ss.str();
+	#if PRINT_INFO == 1
+		cout << table << endl;
+	#endif
+	if (table != previous_table)
+	{
+		cout << table;
+	}
+
+	previous_table = table;
+}
+
+
+void clear_routing_table()
+{
+	#if PRINT_INFO == 1
+		cout << "clear routing table" << endl;
+	#endif
+	for (map<int, list<int> >::iterator it = routing_table.begin(); it != routing_table.end(); it++)
+	{
+		it->second.clear();
+	}
+	routing_table.clear();
+}
 
 /*
  * Converts the given vector for a given node into a message string
  */
-string serialize_vector(int id, map<int, DistanceVectorLink>* links)
+string serialize_lsa(int id, map<int, Link>* links)
 {
 	stringstream ss;
 	ss << "node-" << id << ";";
 
-	for (map<int, DistanceVectorLink>::iterator it = links->begin(); it != links->end(); it++)
+	for (map<int, Link>::iterator it = links->begin(); it != links->end(); it++)
 	{
 		if (it->second.cost <= -1)
 		{
@@ -63,20 +322,23 @@ string serialize_vector(int id, map<int, DistanceVectorLink>* links)
 		ss << it->second.target_id << "-" << it->second.cost << ";";
 	}
 
-	//#if PRINT_INFO == 1
-		cout << endl << "serialize_vector: " << ss.str() << endl << endl;
-	//#endif
+	#if PRINT_INFO == 1
+		cout << "serialize_lsa: " << ss.str() << endl;
+	#endif
 	return ss.str();
 }
 
 /*
  * Converts the given vector for a given node into a message string
  */
-list<DistanceVectorLink> deserialize_vector(int id, string vector_string)
+list<Link> deserialize_lsa(int id, string vector_string)
 {
-	list<DistanceVectorLink> links;
+	#if PRINT_INFO == 1
+		cout << "deserialize_lsa" << endl;
+	#endif
 
-	DistanceVectorLink link;
+	list<Link> links;
+	Link link;
 	char* str = strdup(vector_string.c_str());
 	char* token = strtok(str, "- ;");	
 	token = strtok(NULL, "- ;");
@@ -96,7 +358,7 @@ list<DistanceVectorLink> deserialize_vector(int id, string vector_string)
 	free(str);
 
 	#if PRINT_INFO == 1
-		cout << "deserialize_vector: string - " << vector_string;
+		cout << "deserialize_lsa: string - " << vector_string;
 		cout << ", result list size - " << links.size() << endl;
 	#endif
 	return links;
@@ -105,128 +367,27 @@ list<DistanceVectorLink> deserialize_vector(int id, string vector_string)
 /*
  *
  */
-void update_neighbors(map<int, DistanceVectorLink>* link_map, list<Link> links)
+void update_neighbors(map<int, Link>* link_map, list<Link> links)
 {
-	DistanceVectorLink dv_link;
+	Link link;
 	for (list<Link>::iterator it = links.begin(); it != links.end(); it++)
 	{
-		dv_link.source_id = it->source_id;
-		dv_link.target_id = it->target_id;
-		dv_link.cost = it->cost;
-		dv_link.ip = it->ip;
-		dv_link.port = it->port;
-		dv_link.next_hop = it->target_id;
-		(*link_map)[it->target_id] = dv_link;
+		link.source_id = it->source_id;
+		link.target_id = it->target_id;
+		link.cost = it->cost;
+		link.ip = it->ip;
+		link.port = it->port;
+		(*link_map)[it->target_id] = link;
 	}
 
 	#if PRINT_INFO == 1
 		cout << "updated_neighbors: ";
-		for (map<int, DistanceVectorLink>::iterator it = link_map->begin(); it != link_map->end(); it++)
+		for (map<int, Link>::iterator it = link_map->begin(); it != link_map->end(); it++)
 		{
 			cout << it->first << " ";
 		}
 		cout << endl;
 	#endif
-}
-
-/*
- *
- */
-void initialize_distance_vector(map<int, DistanceVectorLink>* link_map, map<int, DistanceVectorLink>* neighbor_map)
-{
-	cout << "link map size: " << link_map->size() << endl;
-	link_map->clear();
-	cout << "link map size: " << link_map->size() << endl;
-
-	for (map<int, DistanceVectorLink>::iterator it = neighbor_map->begin(); it != neighbor_map->end(); it++)
-	{
-		(*link_map)[it->first] = it->second;
-	}
-
-	#if PRINT_INFO == 1
-		cout << "initialize_distance_vector" << endl;
-	#endif
-}
-
-/*
- * 	Print the current distance vector for the given map
- */
-void print_distance_vector(map<int, DistanceVectorLink>* link_map)
-{
-	#if PRINT_INFO == 1
-		cout << "print_distance_vector" << endl;
-	#endif
-
-	stringstream ss;
-	ss << endl;
-	for (map<int, DistanceVectorLink>::iterator it = link_map->begin(); it != link_map->end(); it++)
-	{
-		ss << it->first << " "; 
-		ss << it->second.next_hop << " ";
-		ss << it->second.cost << endl;
-	}	
-	ss << endl;
-
-	string table = ss.str();
-	if (table != previous_table)
-	{
-		cout << table;
-	}
-	else {
-		#if PRINTINFO == 1
-			count << table;
-		#endif
-	}
-	previous_table = table;
-}
-
-/*
- * Updates the distance vector given neighbor's vector 
- */
-bool update_distance_vector(int id, map<int, DistanceVectorLink>* link_map, list<DistanceVectorLink> neighbor_vector)
-{
-	bool updated = false;
-	DistanceVectorLink* link_to_neighbor;
-	int current_cost;
-
-	for (list<DistanceVectorLink>::iterator it = neighbor_vector.begin(); it != neighbor_vector.end(); it++)
-	{
-		link_to_neighbor = &(*link_map)[it->source_id];
-		if (link_to_neighbor->cost < 0) 
-		{
-			cout << "negative distance, link - " << it->source_id << "-" << it->target_id << endl;
-			continue;
-		}
-		current_cost = it->cost + link_to_neighbor->cost;
-
-		// If the target wasn't reachable from this node before, add it
-		if (link_map->count(it->target_id) <= 0 || (*link_map)[it->target_id].cost <= -1)
-		{
-			DistanceVectorLink new_link;
-			new_link.source_id = id;
-			new_link.target_id = it->target_id;
-			new_link.cost = current_cost;
-			new_link.next_hop = it->source_id;
-
-			(*link_map)[it->target_id] = new_link;
-			updated = true;
-		}
-		// If there is a shorter path to some node through this neighbor, update
-		else if (current_cost < (*link_map)[it->target_id].cost)
-		{
-			DistanceVectorLink* link = &(*link_map)[it->target_id];
-			link->source_id = id;
-			link->cost = current_cost;
-			link->next_hop = it->source_id;
-			updated = true;
-		}
-	}
-
-	#if PRINT_INFO == 1
-		cout << "update_distance_vector: update - " << (updated ? "yes" : "no") << endl;
-		print_distance_vector(&vector_map);
-	#endif
-	return updated;
 }
 
 /*
@@ -238,6 +399,7 @@ void* manager_thread_handle(void* data)
 
 	while (true)
 	{
+
 		FD_ZERO(&read_manager_flags);
         FD_SET(manager_socket, &read_manager_flags);
 
@@ -263,7 +425,13 @@ void* manager_thread_handle(void* data)
 			pthread_mutex_unlock(&neighbor_change_lock);
 
 			pthread_mutex_lock(&neighbor_links_mutex);
-			Topology::process_link_message(virtual_id, string(buffer), (map<int, Link>*)&neighbor_links);
+
+			Topology::process_link_message(virtual_id, string(buffer), &neighbor_links);
+
+			#if PRINT_INFO == 1		
+				cout << "manager thread handle: message" << endl;
+			#endif
+
 			pthread_mutex_unlock(&neighbor_links_mutex);
         }
 	}
@@ -280,12 +448,12 @@ void process_routing()
     int sel;                      		// holds return value for select();
 	
     double duration;
-    bool distance_vector_change = true;
+    bool topology_change = true;
     clock_t start;
 
 	while(true)
 	{	
-		if (distance_vector_change == true)
+		if (topology_change == true)
 		{
 			start = clock();
 		}
@@ -299,6 +467,7 @@ void process_routing()
 			#endif
 			break;
 		}
+
 		FD_ZERO(&read_flags);
         FD_ZERO(&write_flags);
         FD_SET(node_socket, &read_flags);
@@ -323,28 +492,50 @@ void process_routing()
         {
             FD_CLR(node_socket, &write_flags);
 
-            if (distance_vector_change == true)
+            if (topology_change == true)
             {
-            	distance_vector_change = false;
+            	topology_change = false;
 
+            	// Send your LSA to neighbors
 	            pthread_mutex_lock(&neighbor_links_mutex);
-	            for (map<int, DistanceVectorLink>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
+
+	            string lsa = serialize_lsa(virtual_id, &neighbor_links);
+
+	            for (map<int, Link>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
 	            {
 	            	// Skip itself or missing ip addresses
 	            	if (it->first == virtual_id || it->second.ip == "")
 	            	{
 	            		continue;
 	            	}
-
-		    		DistanceVectorLink link = it->second;
-		    		string links_string = serialize_vector(virtual_id, &vector_map);
-					const char* links_cstring = links_string.c_str();
-					
+	
 					struct addrinfo* node_addr;
-					getaddrinfo(link.ip.c_str(), link.port.c_str(), &hints, &node_addr);
-					Utility::send(node_socket, links_cstring, node_addr->ai_addr, node_addr->ai_addrlen);
+					getaddrinfo(it->second.ip.c_str(), it->second.port.c_str(), &hints, &node_addr);
+					Utility::send(node_socket, lsa.c_str(), node_addr->ai_addr, node_addr->ai_addrlen);
 				}
 				pthread_mutex_unlock(&neighbor_links_mutex);
+
+				// Send the received LSAs to all neighbors except the sender
+				for (list<LSA>::iterator lsa_it = lsa_to_send.begin(); lsa_it != lsa_to_send.end(); lsa_it++)
+				{
+					int sender_id = lsa_it->node_id;
+
+					pthread_mutex_lock(&neighbor_links_mutex);
+		            for (map<int, Link>::iterator it = neighbor_links.begin(); it != neighbor_links.end(); it++)
+		            {
+		            	// Skip itself or missing ip addresses
+		            	if (it->first == virtual_id || it->first == sender_id || it->second.ip == "")
+		            	{
+		            		continue;
+		            	}
+						
+						struct addrinfo* node_addr;
+						getaddrinfo(it->second.ip.c_str(), it->second.port.c_str(), &hints, &node_addr);
+						Utility::send(node_socket, lsa_it->encoded_message.c_str(), node_addr->ai_addr, node_addr->ai_addrlen);
+					}
+					pthread_mutex_unlock(&neighbor_links_mutex);
+				}
+				lsa_to_send.clear();
 			}
         }
 
@@ -355,15 +546,21 @@ void process_routing()
             FD_CLR(node_socket, &read_flags);
             
 			Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
-			list<DistanceVectorLink> dv_links = deserialize_vector(virtual_id, string(buffer));
+			list<Link> links = deserialize_lsa(virtual_id, string(buffer));
+			
+			topology_change = graph.add_link_nodes(links);
 
-			distance_vector_change = update_distance_vector(virtual_id, &vector_map, dv_links); 
+			LSA lsa = { links.front().source_id, string(buffer) };
+			lsa_to_send.push_back(lsa);
         }
 	}
 
+	lsa_to_send.clear();
+	build_routing_table();
+	print_routing_table();
+
 	// Tell manager that you converged, and display your table
 	Utility::send(manager_socket, "converged", NULL, NULL);
-	print_distance_vector(&vector_map);
 }
 
 
@@ -372,7 +569,7 @@ void process_messages()
 	#if PRINT_INFO == 1
 		cout << "process_messages" << endl;
 	#endif
-	
+
 	while (true) 
 	{
 		Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
@@ -385,7 +582,7 @@ void process_messages()
 			continue;
 		}
 	}
-
+	
 	while (true)
 	{
 		Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
@@ -408,14 +605,21 @@ void process_messages()
 			string text = Message::serialize(m);
 			const char* cstr = text.c_str();
 
-			int hop = vector_map[m.target_id].next_hop;
+			if (routing_table.size() < 2)
+			{
+				perror("routing table is too short");
+				exit(1);
+			}
+
+			list<int>::iterator it = routing_table[m.target_id].begin();
+			it++;
 
 			pthread_mutex_lock(&neighbor_links_mutex);
-			DistanceVectorLink link = neighbor_links[hop];
-			pthread_mutex_unlock(&neighbor_links_mutex);	
+			Link link = neighbor_links[*it];
+			pthread_mutex_unlock(&neighbor_links_mutex);
 
 			#if PRINT_INFO == 1
-				cout << "process_messages: passing message to: " << hop << endl;
+				cout << "process_messages: passing message to: " << link.target_id << endl;
 			#endif
 
 			struct addrinfo* node_addr;
@@ -477,7 +681,7 @@ int main (int argc, char* argv[])
 	#if PRINT_INFO == 1
 		Utility::get_listening_port(manager_socket);
 	#endif
-
+2
 	// Send connection message to the Manager
 	strncpy(buffer, "connection\0", sizeof("connection\0"));
 	Utility::send(manager_socket, buffer, NULL, NULL);
@@ -529,13 +733,12 @@ int main (int argc, char* argv[])
 	for (list<Link>::iterator it = links.begin(); it != links.end(); it++)
 	{
 		if (it->target_id == virtual_id) continue;
-		
+
 		cout << "now linked to node " << it->target_id;
 		cout << " with cost " << it->cost << endl; 
 	}
 
 	pthread_create(&manager_thread, NULL, manager_thread_handle, NULL);
-
 
 	while (true)
 	{
@@ -546,15 +749,21 @@ int main (int argc, char* argv[])
 
 		if (flag)
 		{
-			pthread_mutex_lock(&neighbor_links_mutex);
-			initialize_distance_vector(&vector_map, &neighbor_links);
-			pthread_mutex_unlock(&neighbor_links_mutex);
-
+			#if PRINT_INFO == 1
+				cout << "neighbor change" << endl;
+			#endif
 			process_routing();
 			process_messages();
-
-			sleep(1);
+			graph.clear();
 		}
+		else
+		{
+			#if PRINT_INFO == 1
+				cout << "no neighbor change" << endl;
+			#endif
+		}
+
+		sleep(1);
 	}
 
 	pthread_join(manager_thread, NULL);

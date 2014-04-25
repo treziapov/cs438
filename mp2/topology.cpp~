@@ -285,6 +285,8 @@ bool Topology::process_link_message(int id, string message, map<int, Link>* node
 		cout << "no longer linked to node " << node_id << endl;
 	}
 
+	
+
 	free(str);
 	return changed;
 }

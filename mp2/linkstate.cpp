@@ -425,6 +425,7 @@ void* manager_thread_handle(void* data)
 			pthread_mutex_unlock(&neighbor_change_lock);
 
 			pthread_mutex_lock(&neighbor_links_mutex);
+
 			Topology::process_link_message(virtual_id, string(buffer), &neighbor_links);
 
 			#if PRINT_INFO == 1		
@@ -554,13 +555,12 @@ void process_routing()
         }
 	}
 
-
-	// Tell manager that you converged, and display your table
-	Utility::send(manager_socket, "converged", NULL, NULL);
-
 	lsa_to_send.clear();
 	build_routing_table();
 	print_routing_table();
+
+	// Tell manager that you converged, and display your table
+	Utility::send(manager_socket, "converged", NULL, NULL);
 }
 
 
@@ -570,6 +570,19 @@ void process_messages()
 		cout << "process_messages" << endl;
 	#endif
 
+	while (true) 
+	{
+		Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
+		if (string(buffer) == "start messages")
+		{
+			break;
+		}
+		else 
+		{
+			continue;
+		}
+	}
+	
 	while (true)
 	{
 		Utility::receive(node_socket, buffer, BUFFER_SIZE, NULL, NULL);
@@ -589,7 +602,6 @@ void process_messages()
 		// Pass the message along if this node is not the target
 		if (m.target_id != virtual_id)
 		{
-
 			string text = Message::serialize(m);
 			const char* cstr = text.c_str();
 
@@ -741,8 +753,8 @@ int main (int argc, char* argv[])
 				cout << "neighbor change" << endl;
 			#endif
 			process_routing();
-
 			process_messages();
+			graph.clear();
 		}
 		else
 		{
