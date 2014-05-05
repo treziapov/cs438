@@ -87,7 +87,9 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile)
 
 	while(1)
 	{
-		receiveNextPacket();
+		int num_bytes = recvfrom(sock, buffer, BUFFER_SIZE - 1, 0, (struct sockaddr *)&sender_addr, &addr_len);
+		buffer[num_bytes] = '\0';
+		printf("recv: %s\n\n", buffer);
 	}
 
 	fclose(file);
