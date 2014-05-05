@@ -1,0 +1,104 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <string.h>
+
+#define MAX_PORT_DIGITS 16
+#define BUFFER_SIZE 255
+#define MAX_SEGMENT_SIZE 512
+
+/*
+
+*/
+void networkSetup(int* sock, unsigned short int myUDPport)
+{
+	struct addrinfo hints, *servinfo, *p;
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET; 
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	// Convert port to c string
+	char port[MAX_PORT_DIGITS];
+	sprintf(port, "%d", myUDPport);
+	printf("networkSetup: port %s\n", port);
+
+	// Get my address
+	getaddrinfo(NULL, port, &hints, &servinfo);
+
+	// Loop through all the results and bind to the first we can
+	for (p = servinfo; p != NULL; p = p->ai_next) 
+	{
+		*sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+		if (*sock == -1) 
+		{
+			perror("networkSetup: server_socket");
+			continue;
+		}
+
+		if (bind(*sock, p->ai_addr, p->ai_addrlen) == -1) 
+		{
+			close(*sock);
+			perror("networkSetup: bind");
+			continue;
+		}
+
+		break;
+	}
+
+	if (p == NULL) 
+	{
+		fprintf(stderr, "manager: failed to bind server_socket\n");
+		exit(1);
+	}
+
+	freeaddrinfo(servinfo);
+}
+
+/*
+
+*/
+void reliablyReceive(unsigned short int myUDPport, char* destinationFile)
+{
+	FILE* file = fopen(destinationFile, "w+");
+	write(fileno(file), buffer, sizeof(buffer));
+
+	int sock;
+	networkSetup(&sock, myUDPport);
+
+	socklen_t addr_len;
+	char buffer[BUFFER_SIZE];
+	struct sockaddr_storage sender_addr;
+
+	while(1)
+	{
+		int num_bytes = recvfrom(sock, buffer, BUFFER_SIZE - 1, 0, (struct sockaddr *)&sender_addr, &addr_len);
+		buffer[num_bytes] = '\0';
+		printf("recv: %s\n\n", buffer);
+	}
+
+	fclose(file);
+	close(sock);
+}
+
+/*
+
+*/
+int main(int argc, char** argv)
+{
+	unsigned short int udpPort;
+	
+	if (argc != 3)
+	{
+		fprintf(stderr, "usage: %s UDP_port filename_to_write\n\n", argv[0]);
+		exit(1);
+	}
+	
+	udpPort = (unsigned short int)atoi(argv[1]);
+	
+	reliablyReceive(udpPort, argv[2]);
+}

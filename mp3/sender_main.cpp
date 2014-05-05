@@ -1,0 +1,214 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <list>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+
+#define MAX_PORT_DIGITS 16
+#define BUFFER_SIZE 255
+#define MAX_SEGMENT_SIZE 14502
+#define TIMEOUT_MS 1024
+
+using namespace std;
+
+/*
+
+*/
+void networkSetup(int* sock, char* hostname, unsigned short int hostUDPport)
+{
+	struct addrinfo *receiver_info, hints;
+	int rv;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET; 
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	// Convert port to c string
+	char port[MAX_PORT_DIGITS];
+	sprintf(port, "%d", hostUDPport);
+	printf("networkSetup: port %s\n", port);
+
+	// Get receiver address information
+	if((rv = getaddrinfo(hostname, port, &hints, &receiver_info)) != 0) 
+	{
+		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+		exit(1);
+	}
+
+	// Make a socket
+	*sock = socket(receiver_info->ai_family, receiver_info->ai_socktype, receiver_info->ai_protocol);
+	if(*sock == -1) 
+	{
+		perror("networkSetup: socket");
+		exit(1);
+	}
+
+	// Connect to the receiver
+	if(connect(*sock, receiver_info->ai_addr, receiver_info->ai_addrlen) == -1)
+	{
+		perror("networkSetup: connect");
+		exit(1);
+	}
+}
+
+/*
+
+*/
+int getFileBytes(FILE* file, char* buffer, int bytesToRead) 
+{
+	int totalBytesRead = 0;
+	int bytesRead;
+
+	while (1) 
+	{
+		if(totalBytesRead == bytesToRead || bytesRead == 0) 
+		{
+			break;
+		}
+		
+		bytesRead = read(fileno(file), buffer, bytesLeft);
+		if(bytesRead < 0) 
+		{
+			fprintf(stderr, "error while reading file");	
+			return -1;
+		}
+
+
+		totalBytesRead += bytesRead;
+	}
+
+	return totalBytesRead;
+}
+
+/*
+
+*/
+void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* filename, unsigned long long int bytesToTransfer)
+{
+	FILE* file = fopen(filename, "rb");
+	if(file == NULL) 
+	{
+		fprintf(stderr, "file doesn't exist - %s\n", filename);
+		exit(1);
+	}
+
+	int sock;
+	networkSetup(&sock, hostname, hostUDPport);
+
+	// State Variables
+	int CongestionWindow = MAX_SEGMENT_SIZE;					
+	int SlowStartThreshold = 64 * 1024 * 1024; // 64 KB
+	int DupAckCount = 0;
+	int bytesLeft = bytesToTransfer;
+
+	char buffer[MAX_SEGMENT_SIZE];
+
+	map<int, bool> packetAckMap;
+
+	int totalPackets = (bytesToTransfer + (MAX_SEGMENT_SIZE - 1)) / MAX_SEGMENT_SIZE;
+	for(int i = 0; i < totalPackets; i++)
+	{
+		packetAckMap[i] = false;
+	}
+	stringstream s;
+	s << "TOTAL PACKETS; ";
+	s << totalPackets;
+	s << ";";
+	char* totalPacketsMessage = s.str().c_str();
+	send(sock, totalPacketsMessage, strlen(totalPackets), 0);
+
+	while(1) 
+	{
+		if (bytesLeft == 0)
+		{
+			send(sock, "DONE", 4, 0);
+			printf("sent all bytes to transfer\n");
+			break;
+		}
+
+		// Send the next packets
+		int congestionWindowPackets = (CongestionWindow + (MAX_SEGMENT_SIZE - 1)) / MAX_SEGMENT_SIZE;
+		int bytesLeftPackets = (CongestionWindow + (MAX_SEGMENT_SIZE - 1)) / MAX_SEGMENT_SIZE;
+		int numPackets = min(congestionWindowPackets, bytesLeftPackets);
+
+		for (int i = 0; i < numPackets; i++)
+		{
+			int bytesRead = getFileBytes(file, buffer, MAX_SEGMENT_SIZE);
+			if (bytesRead == -1)
+			{
+				break;
+			}
+
+			stringstream ss;
+			ss << i;
+			ss << ";";
+			ss << buffer;
+			char* packet = ss.str().c_str();
+			send(sock, packet, strlen(packet), 0);
+		}
+
+		// Wait for ACKs
+		int acksLeft = numPackets;
+		while(acksLeft != 0)
+		{
+			int numBytes = recv(sock, buffer, MAX_SEGMENT_SIZE, 0);
+			buffer[numBytes] = '\0';
+			printf(buffer);
+			
+			char* token;
+			char* str = strdup(buffer);
+			token = strtok(str, ";");
+			if (strcmp(token, "ACK") != 0)
+			{
+				continue;
+			}
+			token = strtok(NULL, ";");
+			int packetIndex = itoa(token);
+			packetAckMap[pakcetIndex] = true;
+			
+			if (CongestionWindow < SlowStartThreshold)
+			{
+				CongestionWindow += MAX_SEGMENT_SIZE;
+			}
+			else 
+			{
+				CongestionWindow += MAX_SEGMENT_SIZE * (MAX_SEGMENT_SIZE * CongestionWindow;)
+			}
+
+			bytesLeft -= MAX_SEGMENT_SIZE;
+			acksLeft--;
+			free(str);
+		}
+	}
+
+	close(sock);
+	fclose(file);
+}
+
+/*
+
+*/
+int main(int argc, char** argv)
+{
+	unsigned short int udpPort;
+	unsigned long long int numBytes;
+
+	if(argc != 5)
+	{
+		fprintf(stderr, "usage: %s receiver_hostname receiver_port filename_to_xfer bytes_to_xfer\n\n", argv[0]);
+		exit(1);
+	}
+	
+	udpPort = (unsigned short int)atoi(argv[2]);
+	numBytes = atoll(argv[4]);
+
+	reliablyTransfer(argv[1], udpPort, argv[3], numBytes);
+} 
